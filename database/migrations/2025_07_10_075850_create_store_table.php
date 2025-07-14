@@ -17,10 +17,10 @@ return new class extends Migration {
             $table->unsignedInteger("area_id");
             $table
                 ->foreign("area_id")
-                ->reference("id")
+                ->references("id")
                 ->on("areas");
             $table
-                ->string("store_head_id")
+                ->unsignedInteger("store_head_id")
                 ->nullable()
                 ->index();
             $table
@@ -30,10 +30,10 @@ return new class extends Migration {
             $table->unsignedBigInteger("checklist_id");
             $table
                 ->foreign("checklist_id")
-                ->reference("id")
+                ->references("id")
                 ->on("checklists");
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

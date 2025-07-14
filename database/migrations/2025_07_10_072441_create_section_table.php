@@ -18,9 +18,10 @@ return new class extends Migration {
                 ->onDelete("cascade");
             $table->string("title")->nullable();
             $table->text("description")->nullable();
-            $table->double("total_percentage")->nullable();
+            $table->decimal("percentage", 5, 2);
             $table->integer("order")->default(1);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -12,13 +12,15 @@ return new class extends Migration {
     {
         Schema::create("users", function (Blueprint $table) {
             $table->increments("id");
-            $table->string("prefix_id");
-            $table->string("id_number");
+            $table->string("id_prefix");
+            $table->string("id_no");
             $table->string("first_name");
             $table->string("middle_name")->nullable();
+            $table->string("last_name");
             $table->string("suffix")->nullable();
-            $table->string("position_name");
-            $table->string("mobile_no")->nullable();
+            $table->string("position_name")->nullable();
+            $table->string("mobile_number")->nullable();
+            $table->enum("gender", ["male", "female"]);
             $table
                 ->unsignedInteger("one_charging_id")
                 ->nullable()
@@ -40,6 +42,7 @@ return new class extends Migration {
                 ->on("roles");
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create("password_reset_tokens", function (Blueprint $table) {

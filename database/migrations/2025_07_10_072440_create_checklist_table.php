@@ -11,11 +11,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create("checklists", function (Blueprint $table) {
-            $table->increments("id");
-            $table->string("title");
-            $table->text("description")->nullable();
+            $table->id();
+            $table->string("section_id");
+            $table->text("question_text");
+            $table->unsignedInteger("order_number")->default(0);
             $table->timestamps();
-            $table->softdeletes();
+            $table->softDeletes();
         });
     }
 

@@ -10,17 +10,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("questions", function (Blueprint $table) {
+        Schema::create("roles", function (Blueprint $table) {
             $table->increments("id");
-            $table->unsignedInteger("section_id");
-            $table
-                ->foreign("section_id")
-                ->references("id")
-                ->on("sections")
-                ->onDelete("cascade");
-            $table->string("title");
-            $table->text("question_text");
-            $table->unsignedInteger("order_number")->default(0);
+            $table->string("name");
+            $table->json("access_permission");
             $table->timestamps();
             $table->softDeletes();
         });
@@ -31,6 +24,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("questions");
+        Schema::dropIfExists("roles");
     }
 };

@@ -10,17 +10,23 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("questions", function (Blueprint $table) {
-            $table->increments("id");
-            $table->unsignedInteger("section_id");
+        Schema::create("survey_answers", function (Blueprint $table) {
+            $table->id();
+
             $table
-                ->foreign("section_id")
+                ->foreignId("survey_session_id")
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->unsignedInteger("question_id");
+            $table
+                ->foreign("question_id")
                 ->references("id")
-                ->on("sections")
+                ->on("questions")
                 ->onDelete("cascade");
-            $table->string("title");
-            $table->text("question_text");
-            $table->unsignedInteger("order_number")->default(0);
+
+            $table->boolean("is_compliant");
+            $table->text("remarks")->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -31,6 +37,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("questions");
+        Schema::dropIfExists("survey_answers");
     }
 };

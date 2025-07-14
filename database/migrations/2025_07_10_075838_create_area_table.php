@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->unsignedInteger("region_id");
             $table
                 ->foreign("region_id")
-                ->reference("id")
+                ->references("id")
                 ->on("regions");
             $table
                 ->unsignedInteger("area_head_id")
@@ -26,8 +26,8 @@ return new class extends Migration {
                 ->foreign("area_head_id")
                 ->references("id")
                 ->on("users");
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

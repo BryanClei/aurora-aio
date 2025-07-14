@@ -21,8 +21,8 @@ return new class extends Migration {
                 ->foreign("region_head_id")
                 ->references("id")
                 ->on("users");
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
