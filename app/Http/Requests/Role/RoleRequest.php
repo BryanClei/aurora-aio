@@ -22,7 +22,15 @@ class RoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-                //
-            ];
+            "name" => [
+                "required",
+                "string",
+                $this->route()->role
+                    ? "unique:roles,name," . $this->route()->role
+                    : "unique:roles,name",
+            ],
+            "access_permission" => ["required", "array", "distinct", "min:1"],
+            "access_permission.*" => ["distinct", "required"],
+        ];
     }
 }

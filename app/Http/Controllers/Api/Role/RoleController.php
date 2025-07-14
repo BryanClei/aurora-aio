@@ -14,6 +14,8 @@ class RoleController extends Controller
 
     public function store(RoleRequest $request)
     {
+        return "me";
+
         $create_role = Role::create([
             "name" => $request->name,
             "access_permission" => $request->access_permission,
