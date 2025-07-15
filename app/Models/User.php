@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Filters\UserFilter;
 use Laravel\Sanctum\HasApiTokens;
 use Essa\APIToolKit\Filters\Filterable;
 use Illuminate\Notifications\Notifiable;
@@ -14,12 +15,27 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes, Filterable;
 
+    protected string $default_filters = UserFilter::class;
+
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $fillable = ["name", "email", "password"];
+    protected $fillable = [
+        "id_prefix",
+        "id_no",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "suffix",
+        "mobile_number",
+        "gender",
+        "one_charging_id",
+        "username",
+        "password",
+        "role_id",
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -40,6 +56,15 @@ class User extends Authenticatable
             "password" => "hashed",
         ];
     }
+
+    // public function one_charging()
+    // {
+    //     return $this->belongsTo(
+    //         OneCharging::class,
+    //         "one_charging_id",
+    //         "sync_id"
+    //     )->withTrashed();
+    // }
 
     public function role()
     {

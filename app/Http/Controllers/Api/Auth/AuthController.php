@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cookie;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\Auth\LoginResource;
 
@@ -42,5 +43,15 @@ class AuthController extends Controller
                 200
             )
             ->withCookie($cookie);
+    }
+
+    public function Logout(Request $request)
+    {
+        Cookie::forget("authcookie");
+        auth("sanctum")
+            ->user()
+            ->currentAccessToken()
+            ->delete();
+        return $this->responseSuccess("Logout successfully");
     }
 }
