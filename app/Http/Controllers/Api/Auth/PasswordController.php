@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Essa\APIToolKit\Api\ApiResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Password\ChangePasswordRequest;
 
 class PasswordController extends Controller
 {
+    use ApiResponse;
+
     public function changedPassword(ChangePasswordRequest $request)
     {
-        $user = auth("sanctum")->user();
+        $id = Auth::id();
+        $user = User::find($id);
 
         if (!$user) {
             return $this->responseUnprocessable(
@@ -24,5 +31,23 @@ class PasswordController extends Controller
         ]);
 
         return $this->responseSuccess("Password change successfully");
+    }
+
+    public function resetPassword($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return $this->responseUnprocessable(
+                "",
+                "Invalid ID provided for updating password. Please check the ID and try again."
+            );
+        }
+
+        $user->update([
+            "password" => $user->username,
+        ]);
+
+        return $this->responseSuccess("The Password has been reset");
     }
 }

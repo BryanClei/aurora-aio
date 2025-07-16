@@ -24,9 +24,9 @@ return new class extends Migration {
             $table->bigInteger("department_id");
             $table->string("department_code");
             $table->string("department_name");
-            $table->bigInteger("unit_id");
-            $table->string("unit_code");
-            $table->string("unit_name");
+            $table->bigInteger("department_unit_id");
+            $table->string("department_unit_code");
+            $table->string("department_unit_name");
             $table->bigInteger("sub_unit_id");
             $table->string("sub_unit_code");
             $table->string("sub_unit_name");
