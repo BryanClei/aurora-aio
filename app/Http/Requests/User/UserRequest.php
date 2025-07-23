@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\User;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UserRequest extends FormRequest
@@ -26,7 +27,21 @@ class UserRequest extends FormRequest
             "personal_info.id_no" => [
                 "sometimes",
                 "required",
-                "unique:users,id_no",
+                function ($attribute, $value, $fail) {
+                    $prefix = request()->input("personal_info.id_prefix");
+
+                    if ($prefix && $value) {
+                        $exists = User::where("id_prefix", $prefix)
+                            ->where("id_no", $value)
+                            ->exists();
+
+                        if ($exists) {
+                            $fail(
+                                "The combination of prefix and ID number already exists."
+                            );
+                        }
+                    }
+                },
             ],
             "personal_info.first_name" => "sometimes:required",
             "personal_info.last_name" => "sometimes:required",
@@ -38,7 +53,7 @@ class UserRequest extends FormRequest
             "personal_info.gender" => "sometimes|required|in:male,female",
             "personal_info.one_charging_id" => [
                 "required",
-                "exists:one_chargings,sync_id",
+                "exists:one_charging,sync_id",
             ],
             "username" => [
                 "required",

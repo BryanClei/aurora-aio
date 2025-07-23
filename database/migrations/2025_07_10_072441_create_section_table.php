@@ -16,8 +16,11 @@ return new class extends Migration {
                 ->foreignId("checklist_id")
                 ->constrained()
                 ->onDelete("cascade");
-            $table->string("title")->nullable();
-            $table->text("description")->nullable();
+            $table
+                ->string("title")
+                ->nullable()
+                ->index();
+            $table->longText("description")->nullable();
             $table->decimal("percentage", 5, 2);
             $table->integer("order")->default(1);
             $table->timestamps();

@@ -2,9 +2,11 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Area\AreaController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\Auth\PasswordController;
+use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\User\UserManagementController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 
@@ -16,7 +18,12 @@ Route::middleware(["auth_key"])->group(function () {
 });
 
 Route::middleware(["auth:sanctum"])->group(function () {
+    Route::post("logout", [AuthController::class, "logout"]);
     // User Controller
+    Route::patch("users/{id}/toggle_archived", [
+        UserManagementController::class,
+        "toggleArchived",
+    ]);
     Route::patch("users/change_password", [
         PasswordController::class,
         "changedPassword",
@@ -33,4 +40,14 @@ Route::middleware(["auth:sanctum"])->group(function () {
         "toggleArchive",
     ]);
     Route::apiResource("role", RoleController::class);
+
+    // Region Controller
+    Route::patch("region/{id}/toggle_archived", [
+        RegionController::class,
+        "toggleArchive",
+    ]);
+    Route::apiResource("region", RegionController::class);
+
+    // Area Controller
+    Route::apiResource("area", AreaController::class);
 });

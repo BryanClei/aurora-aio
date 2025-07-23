@@ -27,7 +27,7 @@ class OneChargingController extends Controller
             ->useFilters()
             ->dynamicPaginate();
 
-        if ($one_charging->empty()) {
+        if ($one_charging->isEmpty()) {
             return $this->responseNotFound(__("messages.data_not_found"));
         }
 

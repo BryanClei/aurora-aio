@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->increments("id");
             $table->string("id_prefix");
             $table->string("id_no");
+            $table->index(["id_prefix", "id_no"]);
             $table->string("first_name");
             $table->string("middle_name")->nullable();
             $table->string("last_name");

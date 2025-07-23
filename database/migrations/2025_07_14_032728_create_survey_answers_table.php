@@ -26,7 +26,7 @@ return new class extends Migration {
                 ->onDelete("cascade");
 
             $table->boolean("is_compliant");
-            $table->text("remarks")->nullable();
+            $table->longText("remarks")->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

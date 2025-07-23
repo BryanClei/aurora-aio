@@ -18,8 +18,8 @@ return new class extends Migration {
                 ->references("id")
                 ->on("sections")
                 ->onDelete("cascade");
-            $table->string("title");
-            $table->text("question_text");
+            $table->string("title")->index();
+            $table->longText("question_text");
             $table->unsignedInteger("order_number")->default(0);
             $table->timestamps();
             $table->softDeletes();

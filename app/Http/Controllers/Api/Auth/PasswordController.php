@@ -40,7 +40,7 @@ class PasswordController extends Controller
         if (!$user) {
             return $this->responseUnprocessable(
                 "",
-                "Invalid ID provided for updating password. Please check the ID and try again."
+                __("messages.id_not_found")
             );
         }
 

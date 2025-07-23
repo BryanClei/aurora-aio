@@ -25,6 +25,10 @@ class UserManagementController extends Controller
             ->useFilters()
             ->dynamicPaginate();
 
+        if ($users->isEmpty()) {
+            return $this->responseNotFound(__("messages.data_not_found"));
+        }
+
         if (!$pagination) {
             UserResource::collection($users);
         } else {
@@ -63,7 +67,7 @@ class UserManagementController extends Controller
         if (!$user) {
             return $this->responseUnprocessable(
                 "",
-                "Invalid ID provided for updating. Please check the ID and try again."
+                __("messages.id_not_found")
             );
         }
 
@@ -85,14 +89,14 @@ class UserManagementController extends Controller
         return $this->responseSuccess("User successfully updated", $user);
     }
 
-    public function archived(Request $request, $id)
+    public function toggleArchived(Request $request, $id)
     {
         $user = User::withTrashed()->find($id);
 
         if (!$user) {
             return $this->responseUnprocessable(
                 "",
-                "Invalid ID. Please check the ID and try again."
+                __("messages.id_not_found")
             );
         }
 

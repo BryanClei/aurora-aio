@@ -25,7 +25,7 @@ return new class extends Migration {
             $table->unsignedBigInteger("surveyor_id");
             $table->string("surveyor_name");
             $table->date("survey_date");
-            $table->text("remarks")->nullable();
+            $table->longText("remarks")->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

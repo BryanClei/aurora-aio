@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create("regions", function (Blueprint $table) {
             $table->increments("id");
-            $table->string("name");
+            $table->string("name")->index();
             $table
                 ->unsignedInteger("region_head_id")
                 ->nullable()

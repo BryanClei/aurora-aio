@@ -52,11 +52,11 @@ class RoleController extends Controller
         if (!$role) {
             return $this->responseUnprocessable(
                 "",
-                "Invalid ID provided for updating. Please check the ID and try again"
+                __("messages.id_not_found")
             );
         }
 
-        $previousName = $role->name;
+        // $previousName = $role->name;
 
         $role->name = $request["name"];
         $role->access_permission = $request["access_permission"];
@@ -77,13 +77,18 @@ class RoleController extends Controller
         if (!$role) {
             return $this->responseUnprocessable(
                 "",
-                "Invalid ID. Please check and try again."
+                __("messages.id_not_found")
             );
         }
 
         if ($role->trashed()) {
             $role->restore();
-            return $this->responseSuccess("Role successfully restored.", $role);
+            return $this->responseSuccess(
+                __("messages.success_restored", [
+                    "attribute" => "Role",
+                ]),
+                $role
+            );
         }
 
         if (User::where("role_id", $id)->exists()) {
@@ -94,6 +99,11 @@ class RoleController extends Controller
         }
 
         $role->delete();
-        return $this->responseSuccess("Role successfully archived.", $role);
+        return $this->responseSuccess(
+            __("messages.success_archived", [
+                "attribute" => "Role",
+            ]),
+            $role
+        );
     }
 }

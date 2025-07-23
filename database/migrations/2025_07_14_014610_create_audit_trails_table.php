@@ -14,17 +14,24 @@ return new class extends Migration {
             $table->increments("id");
             $table->string("module_type");
             $table->string("module_name");
-            $table->unsignedBigInteger("module_id")->index();
+            $table->unsignedBigInteger("module_id");
             $table->string("action");
             $table->unsignedBigInteger("action_by");
             $table->string("action_by_name");
-            $table->text("log_info")->nullable();
+            $table->longText("log_info")->nullable();
             $table->json("previous_data")->nullable();
             $table->json("new_data")->nullable();
-            $table->string("remarks")->nullable();
+            $table->longText("remarks")->nullable();
             $table->string("ip_address")->nullable();
             $table->string("user_agent")->nullable();
             $table->timestamps();
+
+            $table->index("module_type");
+            $table->index("module_name");
+            $table->index("module_id");
+            $table->index("action");
+            $table->index("action_by");
+            $table->index("action_by_name");
         });
     }
 

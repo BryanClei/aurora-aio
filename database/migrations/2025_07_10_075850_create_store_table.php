@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->increments("id");
             $table->string("code");
             $table->string("name");
+            $table->index(["code", "name"]);
             $table->unsignedInteger("area_id");
             $table
                 ->foreign("area_id")

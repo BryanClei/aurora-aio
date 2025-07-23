@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->unsignedBigInteger("sync_id")->unique();
             $table->string("code");
             $table->string("name");
+            $table->index(["code", "name"]);
             $table->bigInteger("company_id");
             $table->string("company_code");
             $table->string("company_name");
