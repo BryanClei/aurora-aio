@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Area\AreaController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Role\RoleController;
+use App\Http\Controllers\Api\Store\StoreController;
 use App\Http\Controllers\Api\Auth\PasswordController;
 use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\User\UserManagementController;
@@ -16,7 +17,7 @@ Route::middleware(["auth_key"])->group(function () {
     Route::get("one_charging", [OneChargingController::class, "index"]);
     Route::post("one_charging/sync", [OneChargingController::class, "sync"]);
 });
-
+ 
 Route::middleware(["auth:sanctum"])->group(function () {
     Route::post("logout", [AuthController::class, "logout"]);
     // User Controller
@@ -49,5 +50,12 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("region", RegionController::class);
 
     // Area Controller
+    Route::patch("area/{id}/toggle_archived", [
+        AreaController::class,
+        "toggleArchive",
+    ]);
     Route::apiResource("area", AreaController::class);
+
+    // Store Controller
+    Route::apiResource("store", StoreController::class);    
 });

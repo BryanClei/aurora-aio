@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\Area;
 
 use App\Models\Area;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\DisplayRequest;
 use App\Http\Requests\Area\AreaRequest;
+use App\Http\Resources\Area\AreaResource;
 
 class AreaController extends Controller
 {
@@ -15,7 +17,7 @@ class AreaController extends Controller
 
     public function index(DisplayRequest $request)
     {
-        $stats = $request->status;
+        $status = $request->status;
         $pagination = $request->pagination;
 
         $areas = Area::when($status == "inactive", function ($query) {
@@ -31,10 +33,10 @@ class AreaController extends Controller
         if (!$pagination) {
             AreaResource::collection($areas);
         } else {
-            $areas = AreaResource::collection($area);
+            $areas = AreaResource::collection($areas);
         }
 
-        return $this->responseSuccess("Area successfully display", $area);
+        return $this->responseSuccess("Area successfully display", $areas);
     }
 
     public function show()
@@ -80,6 +82,34 @@ class AreaController extends Controller
     {
         $area = Area::withTrashed()->find($id);
 
-        
+        if (!$area) {
+            return $this->responseUnprocessable(
+                "",
+                __("messages.id_not_found")
+            );
+        }
+
+        if ($area->trashed()) {
+            $area->restore();
+
+            return $this->responseSuccess(
+                __("messages.success_restored", ["attribute" => "Area"]),
+                $area
+            );
+        }
+
+        if (Store::where("area_id", $area->id)->exists()) {
+            return $this->responseUnprocessable(
+                "",
+                "Unable to archive. Area is currently in use."
+            );
+        }
+
+        $area->delete();
+
+        return $this->responseSuccess(
+            __("messages.success_archived", ["attribute" => "Area"]),
+            $area
+        );
     }
 }

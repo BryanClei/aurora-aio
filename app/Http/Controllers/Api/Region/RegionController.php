@@ -91,16 +91,25 @@ class RegionController extends Controller
 
         if ($region->trashed()) {
             $region->restore();
-            $message = __("messages.success_restored", [
-                "attribute" => "Region",
-            ]);
-        } else {
-            $region->delete();
-            $message = __("messages.success_archived", [
-                "attribute" => "Region",
-            ]);
+
+            return $this->responseSuccess(
+                __("messages.success_restored", ["attribute" => "Region"]),
+                $region
+            );
         }
 
-        return $this->responseSuccess($message, $region);
+        if (Area::where("region_id", $region->id)->exists()) {
+            return $this->responseUnprocessable(
+                "",
+                "Unable to archive. Region is currently in use."
+            );
+        }
+
+        $region->delete();
+
+        return $this->responseSuccess(
+            __("messages.success_archived", ["attribute" => "Region"]),
+            $region
+        );
     }
 }
