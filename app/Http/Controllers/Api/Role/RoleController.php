@@ -32,6 +32,17 @@ class RoleController extends Controller
         return $this->responseSuccess("Role display successfully.", $role);
     }
 
+    public function show($id)
+    {
+        $role = Role::find($id);
+
+        if (!$role) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess("Role display successfully.", $role);
+    }
+
     public function store(RoleRequest $request)
     {
         $create_role = Role::create([

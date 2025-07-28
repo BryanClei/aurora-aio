@@ -39,8 +39,15 @@ class AreaController extends Controller
         return $this->responseSuccess("Area successfully display", $areas);
     }
 
-    public function show()
+    public function show($id)
     {
+        $area = Area::find($id);
+
+        if (!$area) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess("Area display successfully.", $area);
     }
 
     public function store(AreaRequest $request)

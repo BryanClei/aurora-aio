@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\DisplayRequest;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\User\UserRequest;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Resources\User\UserResource;
 
 class UserManagementController extends Controller
@@ -35,6 +37,20 @@ class UserManagementController extends Controller
             $users = UserResource::collection($users);
         }
         return $this->responseSuccess("User display successfully", $users);
+    }
+
+    public function show($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess(
+            "User fetched successfully",
+            new UserResource($user)
+        );
     }
 
     public function store(UserRequest $request)
@@ -109,5 +125,21 @@ class UserManagementController extends Controller
         }
 
         return $this->responseSuccess($message, $user);
+    }
+
+    public function sedar_employees(Request $request)
+    {
+        $sedarUsers = Cache::get("sedar_users");
+
+        if (!$sedarUsers) {
+            Artisan::call("cache:sedar-users");
+
+            return $this->responseSuccess("", "Synching. Refresh the api");
+        }
+
+        return $this->responseSuccess(
+            "Sedar Users display successfully",
+            $sedarUsers
+        );
     }
 }

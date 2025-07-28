@@ -1,20 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Api\Store;
+namespace App\Http\Controllers\Api\Checklist;
 
-use App\Models\Store;
+use App\Models\Checklist;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\DisplayRequest;
 
-class StoreController extends Controller
+class ChecklistController extends Controller
 {
     public function index(DisplayRequest $request)
     {
         $status = $request->status;
         $pagination = $request->pagination;
 
-        $store = Store::when($status == "inactive", function ($query) {
+        $store = Checklist::when($status == "inactive", function ($query) {
             $query->onlyTrashed();
         })
             ->useFilters()

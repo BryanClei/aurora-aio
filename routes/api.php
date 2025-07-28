@@ -14,12 +14,19 @@ use App\Http\Controllers\Api\OneCharging\OneChargingController;
 Route::post("login", [AuthController::class, "login"]);
 
 Route::middleware(["auth_key"])->group(function () {
-    Route::get("one_charging", [OneChargingController::class, "index"]);
+    Route::get("one_charging/api", [OneChargingController::class, "index"]);
     Route::post("one_charging/sync", [OneChargingController::class, "sync"]);
 });
- 
+
 Route::middleware(["auth:sanctum"])->group(function () {
     Route::post("logout", [AuthController::class, "logout"]);
+
+    Route::get("one_charging", [OneChargingController::class, "index"]);
+    Route::post("one_charging/system_sync", [
+        OneChargingController::class,
+        "sync",
+    ]);
+
     // User Controller
     Route::patch("users/{id}/toggle_archived", [
         UserManagementController::class,
@@ -33,6 +40,12 @@ Route::middleware(["auth:sanctum"])->group(function () {
         PasswordController::class,
         "resetPassword",
     ]);
+
+    Route::get("sedar_employees", [
+        UserManagementController::class,
+        "sedar_employees",
+    ]);
+
     Route::apiResource("users", UserManagementController::class);
 
     // Role Controller
@@ -57,5 +70,5 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("area", AreaController::class);
 
     // Store Controller
-    Route::apiResource("store", StoreController::class);    
+    Route::apiResource("store", StoreController::class);
 });
