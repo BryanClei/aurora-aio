@@ -134,7 +134,7 @@ class UserManagementController extends Controller
         if (!$sedarUsers) {
             Artisan::call("cache:sedar-users");
 
-            return $this->responseSuccess("", "Synching. Refresh the api");
+            return $this->responseSuccess("Syncing. Refresh the api", "");
         }
 
         return $this->responseSuccess(
