@@ -12,9 +12,7 @@ return new class extends Migration {
     {
         Schema::create("checklists", function (Blueprint $table) {
             $table->id();
-            $table->string("section_id");
-            $table->text("question_text");
-            $table->unsignedInteger("order_number")->default(0);
+            $table->string("name");
             $table->timestamps();
             $table->softDeletes();
         });

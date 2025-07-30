@@ -37,6 +37,20 @@ class OneChargingController extends Controller
         );
     }
 
+    public function show($id)
+    {
+        $one_charging = OneCharging::find($id);
+
+        if (!$one_charging) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess(
+            "One charging display successfully.",
+            $one_charging
+        );
+    }
+
     public function sync()
     {
         $url = "https://api-one.rdfmis.com/api/charging_api?pagination=none";
@@ -86,12 +100,10 @@ class OneChargingController extends Controller
             ];
         });
 
-        // Get existing sync_ids from DB
         $existingSyncIds = OneCharging::withTrashed()
             ->pluck("sync_id")
             ->toArray();
 
-        // Count new and updated records
         $newRecords = $sync->filter(
             fn($item) => !in_array($item["sync_id"], $existingSyncIds, true)
         );

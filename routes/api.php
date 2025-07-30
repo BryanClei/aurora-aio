@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\Store\StoreController;
 use App\Http\Controllers\Api\Auth\PasswordController;
 use App\Http\Controllers\Api\Region\RegionController;
+use App\Http\Controllers\Api\Checklist\ChecklistController;
 use App\Http\Controllers\Api\User\UserManagementController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 
@@ -22,6 +23,7 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::post("logout", [AuthController::class, "logout"]);
 
     Route::get("one_charging", [OneChargingController::class, "index"]);
+    Route::get("one_charging/{id}", [OneChargingController::class, "show"]);
     Route::post("one_charging/system_sync", [
         OneChargingController::class,
         "sync",
@@ -68,6 +70,9 @@ Route::middleware(["auth:sanctum"])->group(function () {
         "toggleArchive",
     ]);
     Route::apiResource("area", AreaController::class);
+
+    // Checklist Controller
+    Route::apiResource("checklist", ChecklistController::class);
 
     // Store Controller
     Route::apiResource("store", StoreController::class);

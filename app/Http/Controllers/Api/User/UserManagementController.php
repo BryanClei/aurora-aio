@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\User;
 
 use App\Models\User;
+use App\Models\OneCharging;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
@@ -55,6 +56,10 @@ class UserManagementController extends Controller
 
     public function store(UserRequest $request)
     {
+        $one_charging_id = $request["personal_info"]["one_charging_id"];
+
+        $one_charging = OneCharging::find($one_charging_id);
+
         $create_user = User::create([
             "id_prefix" => $request["personal_info"]["id_prefix"],
             "id_no" => $request["personal_info"]["id_no"],
@@ -64,7 +69,10 @@ class UserManagementController extends Controller
             "suffix" => $request["personal_info"]["suffix"],
             "mobile_number" => $request["personal_info"]["mobile_number"],
             "gender" => $request["personal_info"]["gender"],
-            "one_charging_id" => $request["personal_info"]["one_charging_id"],
+            "one_charging_id" => $one_charging->id,
+            "one_charging_sync_id" => $one_charging->sync_id,
+            "one_charging_code" => $one_charging->code,
+            "one_charging_name" => $one_charging->name,
             "username" => $request["username"],
             "password" => $request["username"],
             "role_id" => $request["role_id"],
@@ -80,6 +88,10 @@ class UserManagementController extends Controller
     {
         $user = User::find($id);
 
+        $one_charging_id = $request["personal_info"]["one_charging_id"];
+
+        $one_charging = OneCharging::find($one_charging_id);
+
         if (!$user) {
             return $this->responseUnprocessable(
                 "",
@@ -92,6 +104,10 @@ class UserManagementController extends Controller
             "one_charging_id" => $request["personal_info"]["one_charging_id"],
             "username" => $request["username"],
             "role_id" => $request["role_id"],
+            "one_charging_id" => $one_charging->id,
+            "one_charging_sync_id" => $one_charging->sync_id,
+            "one_charging_code" => $one_charging->code,
+            "one_charging_name" => $one_charging->name,
         ];
 
         $user->fill($data);
@@ -139,7 +155,7 @@ class UserManagementController extends Controller
 
         return $this->responseSuccess(
             "Sedar Users display successfully",
-            $sedarUsers
+            $sedarUsers["data"]
         );
     }
 }

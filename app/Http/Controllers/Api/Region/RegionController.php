@@ -38,10 +38,17 @@ class RegionController extends Controller
         return $this->responseSuccess("Regions display successfully", $region);
     }
 
-    public function show()
+    public function show($id)
     {
-    }
+        $region = Region::find($id);
 
+        if (!$region) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess("Region display successfully.", $region);
+    }
+    
     public function store(RegionRequest $request)
     {
         $new_region = Region::create([

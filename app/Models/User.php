@@ -32,6 +32,9 @@ class User extends Authenticatable
         "mobile_number",
         "gender",
         "one_charging_id",
+        "one_charging_sync_id",
+        "one_charging_code",
+        "one_charging_name",
         "username",
         "password",
         "role_id",
@@ -57,14 +60,14 @@ class User extends Authenticatable
         ];
     }
 
-    // public function one_charging()
-    // {
-    //     return $this->belongsTo(
-    //         OneCharging::class,
-    //         "one_charging_id",
-    //         "sync_id"
-    //     )->withTrashed();
-    // }
+    public function one_charging()
+    {
+        return $this->belongsTo(
+            OneCharging::class,
+            "one_charging_sync_id",
+            "sync_id"
+        )->withTrashed();
+    }
 
     public function role()
     {
