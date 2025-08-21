@@ -37,6 +37,7 @@ class AreaRequest extends FormRequest
                 "required",
                 Rule::exists("users", "id")->whereNull("deleted_at"),
             ],
+            "area_list" => "array",
         ];
     }
 

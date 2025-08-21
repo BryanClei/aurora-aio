@@ -16,4 +16,9 @@ class Checklist extends Model
     protected string $default_filters = ChecklistFilter::class;
 
     protected $fillable = ["name"];
+
+    public function section()
+    {
+        return $this->hasMany(Section::class, "id", "checklist_id");
+    }
 }

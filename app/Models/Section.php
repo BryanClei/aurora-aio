@@ -13,4 +13,19 @@ class Section extends Model
     use HasFactory, SoftDeletes, Filterable;
 
     protected string $default_filters = SectionFilter::class;
+
+    protected $table = "sections";
+
+    protected $fillable = [
+        "checklist_id",
+        "title",
+        "description",
+        "percentage",
+        "order",
+    ];
+
+    public function checklist()
+    {
+        return $this->belongsTo(Checklist::class, "checklist_id", "id");
+    }
 }

@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use App\Filters\AreaFilter;
-use Laravel\Sanctum\HasApiTokens;
 use Essa\APIToolKit\Filters\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Area extends Model
 {
-    use HasApiTokens, Filterable, SoftDeletes;
+    use HasFactory, Filterable, SoftDeletes;
 
     protected string $default_filters = AreaFilter::class;
 
@@ -21,8 +21,12 @@ class Area extends Model
         return $this->belongsTo(Region::class, "region_id", "id");
     }
 
-    public function aread_head()
+    public function area_head()
     {
-        return $this->belongsTo(User::class, "area_head_id", "id");
+        return $this->belongsTo(
+            User::class,
+            "area_head_id",
+            "id"
+        )->withTrashed();
     }
 }

@@ -38,7 +38,7 @@ class ChecklistController extends Controller
 
         return $this->responseSuccess(
             "Checklist display successfully",
-            $region
+            $checklist
         );
     }
 
@@ -93,7 +93,7 @@ class ChecklistController extends Controller
         );
     }
 
-    public function toggleArchived($id)
+    public function toggleArchive($id)
     {
         $checklist = Checklist::withTrashed()->find($id);
 

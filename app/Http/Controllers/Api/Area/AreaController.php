@@ -47,16 +47,25 @@ class AreaController extends Controller
             return $this->responseNotFound(__("messages.id_not_found"));
         }
 
-        return $this->responseSuccess("Area display successfully.", $area);
+        $transform_data = new AreaResource($area);
+
+        return $this->responseSuccess(
+            "Area display successfully.",
+            $transform_data
+        );
     }
 
     public function store(AreaRequest $request)
     {
+        
+
         $area = Area::create([
             "name" => $request->name,
             "region_id" => $request->region_id,
             "area_head_id" => $request->area_head_id,
         ]);
+
+
 
         return $this->responseCreated("Area successfully created", $area);
     }

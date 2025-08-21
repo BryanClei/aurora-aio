@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Store\StoreController;
 use App\Http\Controllers\Api\Auth\PasswordController;
 use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\Checklist\ChecklistController;
+use App\Http\Controllers\Api\PatchNote\PatchNoteController;
 use App\Http\Controllers\Api\User\UserManagementController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 
@@ -72,8 +73,15 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("area", AreaController::class);
 
     // Checklist Controller
+    Route::patch("checklist/{id}/toggle_archived", [
+        ChecklistController::class,
+        "toggleArchive",
+    ]);
     Route::apiResource("checklist", ChecklistController::class);
 
     // Store Controller
     Route::apiResource("store", StoreController::class);
+
+    // Patch Notes Controller
+    Route::apiResource("patch_notes", PatchNoteController::class);
 });
