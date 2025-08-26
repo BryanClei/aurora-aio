@@ -62,6 +62,18 @@ class PatchNoteController extends Controller
         );
     }
 
+    public function public_show(PatchNote $patchNote)
+    {
+        if (!$patchNote) {
+            return $this->responseNotFound("", "Patch note not found");
+        }
+
+        return $this->responseSuccess(
+            "Patch note display successfully",
+            $patchNote
+        );
+    }
+
     public function show(PatchNote $patchNote)
     {
         if (!$patchNote) {

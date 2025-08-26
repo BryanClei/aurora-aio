@@ -18,6 +18,10 @@ Route::get("patch_notes/public_display", [
     PatchNoteController::class,
     "public_index",
 ]);
+Route::get("patch_notes/{patchNote}/public_display", [
+    PatchNoteController::class,
+    "public_show",
+]);
 
 Route::middleware(["auth_key"])->group(function () {
     Route::get("one_charging/api", [OneChargingController::class, "index"]);
@@ -70,9 +74,7 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("region", RegionController::class);
 
     // Area Controller
-    Route::patch("area/{id}/toggle_archived", [
-        AreaController::class,
-    ]);
+    Route::patch("area/{id}/toggle_archived", [AreaController::class]);
     Route::apiResource("area", AreaController::class);
 
     // Checklist Controller
