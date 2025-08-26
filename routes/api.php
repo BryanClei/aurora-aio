@@ -14,6 +14,10 @@ use App\Http\Controllers\Api\User\UserManagementController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 
 Route::post("login", [AuthController::class, "login"]);
+Route::get("patch_notes/public_display", [
+    PatchNoteController::class,
+    "public_index",
+]);
 
 Route::middleware(["auth_key"])->group(function () {
     Route::get("one_charging/api", [OneChargingController::class, "index"]);
@@ -68,7 +72,6 @@ Route::middleware(["auth:sanctum"])->group(function () {
     // Area Controller
     Route::patch("area/{id}/toggle_archived", [
         AreaController::class,
-        "toggleArchive",
     ]);
     Route::apiResource("area", AreaController::class);
 
@@ -83,5 +86,13 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("store", StoreController::class);
 
     // Patch Notes Controller
+    Route::get("patch_notes/download/{filename}", [
+        PatchNoteController::class,
+        "download",
+    ]);
+    Route::patch("patch_notes/{id}/publish_update", [
+        PatchNoteController::class,
+        "publishing_update",
+    ]);
     Route::apiResource("patch_notes", PatchNoteController::class);
 });

@@ -85,6 +85,15 @@ class PatchNote extends Model
         ]);
     }
 
+    // Method to unpublish patch note
+    public function unpublish()
+    {
+        $this->update([
+            "is_published" => false,
+            "published_at" => null,
+        ]);
+    }
+
     public function getFileUrlAttribute()
     {
         return $this->filepath

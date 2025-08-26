@@ -6,6 +6,7 @@ use App\Models\PatchNote;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\PatchNote\PatchNoteRequest;
 
 class PatchNoteController extends Controller
@@ -36,6 +37,21 @@ class PatchNoteController extends Controller
         }
 
         $patchNotes = $query
+            ->latest("created_at")
+            ->useFilters()
+            ->dynamicPaginate();
+
+        return $this->responseSuccess(
+            "Patch notes display successfully.",
+            $patchNotes
+        );
+    }
+
+    public function public_index()
+    {
+        $patchNotes = PatchNote::query()
+            ->where("is_published", true)
+            ->whereNotNull("published_at")
             ->latest("created_at")
             ->useFilters()
             ->dynamicPaginate();
@@ -132,5 +148,44 @@ class PatchNoteController extends Controller
             "Patch note successfully updated.",
             $patchNote
         );
+    }
+
+    public function publishing_update($id)
+    {
+        $patchNote = PatchNote::find($id);
+        if (!$patchNote) {
+            return $this->responseUnprocessable(
+                "",
+                __("messages.id_not_found")
+            );
+        }
+
+        if ($patchNote->is_published) {
+            $patchNote->unpublish();
+            $message = "Patch note successfully unpublished.";
+        } else {
+            $patchNote->publish();
+            $message = "Patch note successfully published.";
+        }
+
+        return $this->responseSuccess($message, $patchNote);
+    }
+
+    public function download($filename)
+    {
+        $disk = Storage::disk("public");
+
+        if (!$disk->exists("patch-notes/{$filename}")) {
+            $message = __("messages.id_not_found");
+            return GlobalFunction::uploadfailed(
+                $message,
+                $filename
+            )->setStatusCode(404);
+        }
+
+        $filePath = $disk->path("patch-notes/{$filename}");
+        return response()
+            ->download($filePath, $filename)
+            ->setStatusCode(200);
     }
 }
