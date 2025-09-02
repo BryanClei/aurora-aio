@@ -10,10 +10,18 @@ use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\DisplayRequest;
 use App\Http\Requests\Area\AreaRequest;
 use App\Http\Resources\Area\AreaResource;
+use App\Services\AreaServices\AreaService;
 
 class AreaController extends Controller
 {
     use ApiResponse;
+
+    protected AreaService $areaService;
+
+    public function __construct(AreaService $areaService)
+    {
+        $this->areaService = $areaService;
+    }
 
     public function index(DisplayRequest $request)
     {
@@ -57,22 +65,17 @@ class AreaController extends Controller
 
     public function store(AreaRequest $request)
     {
-        
+        $area = $this->areaService->createArea($request->all());
 
-        $area = Area::create([
-            "name" => $request->name,
-            "region_id" => $request->region_id,
-            "area_head_id" => $request->area_head_id,
-        ]);
-
-
-
-        return $this->responseCreated("Area successfully created", $area);
+        return $this->responseCreated(
+            "Area successfully created",
+            $area["area"]
+        );
     }
 
     public function update(AreaRequest $request, $id)
     {
-        $area = Area::find($id);
+        $area = $this->areaService->updateArea($id, $request->all());
 
         if (!$area) {
             return $this->responseUnprocessable(
@@ -81,22 +84,12 @@ class AreaController extends Controller
             );
         }
 
-        $area->name = $request->name;
-        $area->region_id = $request->region_id;
-        $area->area_head_id = $request->area_head_id;
-
-        if (!$area->isDirty()) {
-            return $this->responseSuccess("No Changes", $area);
-        }
-
-        $area->save();
-
-        return $this->responseSuccess("Area successfully updated.", $area);
+        return $this->responseSuccess($area["message"], $area["data"]);
     }
 
     public function toggleArchive($id)
     {
-        $area = Area::withTrashed()->find($id);
+        $area = $this->areaService->toggleArchived($id);
 
         if (!$area) {
             return $this->responseUnprocessable(
@@ -105,27 +98,6 @@ class AreaController extends Controller
             );
         }
 
-        if ($area->trashed()) {
-            $area->restore();
-
-            return $this->responseSuccess(
-                __("messages.success_restored", ["attribute" => "Area"]),
-                $area
-            );
-        }
-
-        if (Store::where("area_id", $area->id)->exists()) {
-            return $this->responseUnprocessable(
-                "",
-                "Unable to archive. Area is currently in use."
-            );
-        }
-
-        $area->delete();
-
-        return $this->responseSuccess(
-            __("messages.success_archived", ["attribute" => "Area"]),
-            $area
-        );
+        return $this->responseSuccess($area["message"], $area["area"]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Region;
 
+use App\Models\Area;
 use App\Models\Region;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -9,10 +10,18 @@ use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\DisplayRequest;
 use App\Http\Requests\Region\RegionRequest;
 use App\Http\Resources\Region\RegionResource;
+use App\Services\RegionServices\RegionService;
 
 class RegionController extends Controller
 {
     use ApiResponse;
+
+    protected RegionService $regionService;
+
+    public function __construct(RegionService $regionService)
+    {
+        $this->regionService = $regionService;
+    }
 
     public function index(DisplayRequest $request)
     {
@@ -56,20 +65,17 @@ class RegionController extends Controller
 
     public function store(RegionRequest $request)
     {
-        $new_region = Region::create([
-            "name" => $request->name,
-            "region_head_id" => $request->region_head_id,
-        ]);
+        $new_region = $this->regionService->createRegion($request->all());
 
         return $this->responseCreated(
             "Region successfully created.",
-            $new_region
+            $new_region["region"]
         );
     }
 
     public function update(RegionRequest $request, $id)
     {
-        $region = Region::find($id);
+        $region = $this->regionService->updateRegion($id, $request->all());
 
         if (!$region) {
             return $this->responseUnprocessable(
@@ -78,16 +84,7 @@ class RegionController extends Controller
             );
         }
 
-        $region->name = $request->name;
-        $region->region_head_id = $request->region_head_id;
-
-        if (!$region->isDirty()) {
-            return $this->responseSuccess("No Changes", $region);
-        }
-
-        $region->save();
-
-        return $this->responseSuccess("Region successfully updated", $region);
+        return $this->responseSuccess($region["message"], $region["region"]);
     }
 
     public function toggleArchive(Request $request, $id)
@@ -101,27 +98,6 @@ class RegionController extends Controller
             );
         }
 
-        if ($region->trashed()) {
-            $region->restore();
-
-            return $this->responseSuccess(
-                __("messages.success_restored", ["attribute" => "Region"]),
-                $region
-            );
-        }
-
-        if (Area::where("region_id", $region->id)->exists()) {
-            return $this->responseUnprocessable(
-                "",
-                "Unable to archive. Region is currently in use."
-            );
-        }
-
-        $region->delete();
-
-        return $this->responseSuccess(
-            __("messages.success_archived", ["attribute" => "Region"]),
-            $region
-        );
+        return $this->responseSuccess($region["message"], $region["region"]);
     }
 }

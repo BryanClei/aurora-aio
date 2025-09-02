@@ -12,10 +12,18 @@ use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\User\UserRequest;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Resources\User\UserResource;
+use App\Services\UserServices\ManagementService;
 
 class UserManagementController extends Controller
 {
     use ApiResponse;
+
+    protected ManagementService $managementService;
+
+    public function __construct(ManagementService $managementService)
+    {
+        $this->managementService = $managementService;
+    }
 
     public function index(DisplayRequest $request)
     {
@@ -56,41 +64,14 @@ class UserManagementController extends Controller
 
     public function store(UserRequest $request)
     {
-        $one_charging_id = $request["personal_info"]["one_charging_id"];
+        $user = $this->managementService->createUser($request->all());
 
-        $one_charging = OneCharging::find($one_charging_id);
-
-        $create_user = User::create([
-            "id_prefix" => $request["personal_info"]["id_prefix"],
-            "id_no" => $request["personal_info"]["id_no"],
-            "first_name" => $request["personal_info"]["first_name"],
-            "middle_name" => $request["personal_info"]["middle_name"],
-            "last_name" => $request["personal_info"]["last_name"],
-            "suffix" => $request["personal_info"]["suffix"],
-            "mobile_number" => $request["personal_info"]["mobile_number"],
-            "gender" => $request["personal_info"]["gender"],
-            "one_charging_id" => $one_charging->id,
-            "one_charging_sync_id" => $one_charging->sync_id,
-            "one_charging_code" => $one_charging->code,
-            "one_charging_name" => $one_charging->name,
-            "username" => $request["username"],
-            "password" => $request["username"],
-            "role_id" => $request["role_id"],
-        ]);
-
-        return $this->responseCreated(
-            "User Successfully Created",
-            $create_user
-        );
+        return $this->responseCreated("User Successfully Created", $user);
     }
 
     public function update(UserRequest $request, $id)
     {
-        $user = User::find($id);
-
-        $one_charging_id = $request["personal_info"]["one_charging_id"];
-
-        $one_charging = OneCharging::find($one_charging_id);
+        $user = $this->managementService->updateUser($request->all(), $id);
 
         if (!$user) {
             return $this->responseUnprocessable(
@@ -99,48 +80,25 @@ class UserManagementController extends Controller
             );
         }
 
-        $data = [
-            "mobile_number" => $request["personal_info"]["mobile_number"],
-            "one_charging_id" => $request["personal_info"]["one_charging_id"],
-            "username" => $request["username"],
-            "role_id" => $request["role_id"],
-            "one_charging_id" => $one_charging->id,
-            "one_charging_sync_id" => $one_charging->sync_id,
-            "one_charging_code" => $one_charging->code,
-            "one_charging_name" => $one_charging->name,
-        ];
-
-        $user->fill($data);
-
-        if (!$user->isDirty()) {
+        if (!$user->wasChanged()) {
             return $this->responseSuccess("No Changes", $user);
         }
-
-        $user->save();
 
         return $this->responseSuccess("User successfully updated", $user);
     }
 
     public function toggleArchived(Request $request, $id)
     {
-        $user = User::withTrashed()->find($id);
+        $result = $this->managementService->toggleArchived($id);
 
-        if (!$user) {
+        if (!$result) {
             return $this->responseUnprocessable(
                 "",
                 __("messages.id_not_found")
             );
         }
 
-        if ($user->trashed()) {
-            $user->restore();
-            $message = "User successfully restored.";
-        } else {
-            $user->delete();
-            $message = "User successfully archived.";
-        }
-
-        return $this->responseSuccess($message, $user);
+        return $this->responseSuccess($result["message"], $result["user"]);
     }
 
     public function sedar_employees(Request $request)

@@ -81,7 +81,7 @@ class UserRequest extends FormRequest
             "personal_info.mobile_number.regex" =>
                 "The mobile number field format is invalid.",
             "personal_info.mobile_number.unique" =>
-                "The contact number has already been taken.",
+                "The contact number :input has already been taken.",
             "personal_info.gender.required" => "The gender field is required.",
             "personal_info.gender.in" =>
                 "The gender must be either 'male' or 'female'.",
@@ -89,6 +89,7 @@ class UserRequest extends FormRequest
                 "The one charging field is required.",
             "personal_info.one_charging_id.exists" =>
                 "The selected one charging is invalid",
+            "username.unique" => "The username :input has already been taken.",
         ];
     }
 }

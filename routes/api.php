@@ -74,7 +74,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("region", RegionController::class);
 
     // Area Controller
-    Route::patch("area/{id}/toggle_archived", [AreaController::class]);
+    Route::patch("area/{id}/toggle_archived", [
+        AreaController::class,
+        "toggleArchive",
+    ]);
     Route::apiResource("area", AreaController::class);
 
     // Checklist Controller

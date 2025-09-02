@@ -10,48 +10,50 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cookie;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\Auth\LoginResource;
+use App\Services\AuthServices\AuthService;
 
 class AuthController extends Controller
 {
     use ApiResponse;
 
+    protected AuthService $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function login(LoginRequest $request)
     {
-        $user = User::with("role")
-            ->where("username", $request->username)
-            ->first();
+        $result = $this->authService->login(
+            $request->username,
+            $request->password
+        );
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$result) {
             return $this->responseBadRequest("", "Invalid Credentials");
         }
 
-        $token = $user->createToken("PersonalAccessToken")->plainTextToken;
-        $user["token"] = $token;
-
-        $cookie = cookie("authcookie", $token);
+        $user = $result["user"];
+        $token = $result["token"];
+        $cookie = $result["cookie"];
 
         return response()
-            ->json(
-                [
-                    "message" => "Successfully Logged In",
-                    "token" => $token,
-                    "data" => array_merge($user->toArray(), [
-                        "should_change_password" =>
-                            (bool) ($request->username === $request->password),
-                    ]),
-                ],
-                200
-            )
+            ->json([
+                "message" => "Successfully Logged In",
+                "token" => $token,
+                "data" => array_merge($user->toArray(), [
+                    "should_change_password" =>
+                        (bool) $result["should_change_password"],
+                ]),
+            ])
             ->withCookie($cookie);
     }
 
-    public function Logout(Request $request)
+    public function logout(Request $request)
     {
-        Cookie::forget("authcookie");
-        auth("sanctum")
-            ->user()
-            ->currentAccessToken()
-            ->delete();
+        $this->authService->logout($request->user());
+
         return $this->responseSuccess("Logout successfully");
     }
 }

@@ -8,16 +8,26 @@ use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Services\AuthServices\AuthService;
 use App\Http\Requests\Password\ChangePasswordRequest;
 
 class PasswordController extends Controller
 {
     use ApiResponse;
 
+    protected AuthService $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function changedPassword(ChangePasswordRequest $request)
     {
-        $id = Auth::id();
-        $user = User::find($id);
+        $user = $this->authService->changePassword(
+            Auth::id(),
+            $request->new_password
+        );
 
         if (!$user) {
             return $this->responseUnprocessable(
@@ -26,16 +36,12 @@ class PasswordController extends Controller
             );
         }
 
-        $user->update([
-            "password" => Hash::make($request->new_password),
-        ]);
-
-        return $this->responseSuccess("Password change successfully");
+        return $this->responseSuccess("Password changed successfully");
     }
 
     public function resetPassword($id)
     {
-        $user = User::find($id);
+        $user = $this->authService->resetPassword($id);
 
         if (!$user) {
             return $this->responseUnprocessable(
@@ -43,10 +49,6 @@ class PasswordController extends Controller
                 __("messages.id_not_found")
             );
         }
-
-        $user->update([
-            "password" => $user->username,
-        ]);
 
         return $this->responseSuccess("The Password has been reset");
     }

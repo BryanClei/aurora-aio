@@ -10,10 +10,18 @@ use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\DisplayRequest;
 use App\Http\Requests\Checklist\ChecklistRequest;
 use App\Http\Resources\Checklist\ChecklistResource;
+use App\Services\ChecklistServices\ChecklistService;
 
 class ChecklistController extends Controller
 {
     use ApiResponse;
+
+    protected ChecklistService $checkListService;
+
+    public function __construct(ChecklistService $checkListService)
+    {
+        $this->checkListService = $checkListService;
+    }
 
     public function index(DisplayRequest $request)
     {
@@ -58,19 +66,20 @@ class ChecklistController extends Controller
 
     public function store(ChecklistRequest $request)
     {
-        $checklist = Checklist::create([
-            "name" => $request->name,
-        ]);
+        $checklist = $this->checkListService->createChecklist($request->all());
 
         return $this->responseCreated(
             "Checklist successfully created.",
-            $checklist
+            $checklist["checklist"]
         );
     }
 
     public function update(ChecklistRequest $request, $id)
     {
-        $checklist = Checklist::find($id);
+        $checklist = $this->checkListService->updateChecklist(
+            $id,
+            $request->all()
+        );
 
         if (!$checklist) {
             return $this->responseUnprocessable(
@@ -79,17 +88,9 @@ class ChecklistController extends Controller
             );
         }
 
-        $checklist->name = $request->name;
-
-        if (!$checklist->isDirty()) {
-            return $this->responseSuccess("No Changes", $checklist);
-        }
-
-        $checklist->save();
-
         return $this->responseSuccess(
-            "Checklist successfully updated",
-            $checklist
+            $checklist["message"],
+            $checklist["checklist"]
         );
     }
 
