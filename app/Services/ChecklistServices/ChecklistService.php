@@ -52,45 +52,19 @@ class ChecklistService
 
     public function updateChecklist(int $checklistId, array $data): array
     {
-        $checklist = Checklist::with("sections.questions.options")->findOrFail(
+        $checklist = Checklist::with("sections.questions.options")->find(
             $checklistId
         );
 
+        if (!$checklist) {
+            return [
+                "checklist" => __("messages.id_not_found"),
+                "has_changes" => false,
+            ];
+        }
+
         $existingData = $this->normalizeChecklist($checklist);
-        $incomingData = [
-            "name" => $data["name"],
-            "sections" => collect($data["sections"])
-                ->map(
-                    fn($section) => [
-                        "title" => $section["title"],
-                        "order_index" => $section["order_index"],
-                        "questions" => collect($section["questions"])
-                            ->map(
-                                fn($question) => [
-                                    "question_text" =>
-                                        $question["question_text"],
-                                    "question_type" =>
-                                        $question["question_type"],
-                                    "order_index" => $question["order_index"],
-                                    "options" => collect(
-                                        $question["options"] ?? []
-                                    )
-                                        ->map(
-                                            fn($option) => [
-                                                "option_text" =>
-                                                    $option["option_text"],
-                                                "order_index" =>
-                                                    $option["order_index"],
-                                            ]
-                                        )
-                                        ->toArray(),
-                                ]
-                            )
-                            ->toArray(),
-                    ]
-                )
-                ->toArray(),
-        ];
+        $incomingData = $this->normalizeIncoming($data);
 
         $hasChanges = json_encode($existingData) !== json_encode($incomingData);
 
@@ -107,27 +81,26 @@ class ChecklistService
         foreach ($data["sections"] as $sectionData) {
             $section = $checklist->sections()->create([
                 "title" => $sectionData["title"],
-                "order_index" => $sectionData["order_index"],
+                "order_index" => (int) $sectionData["order_index"],
             ]);
 
             foreach ($sectionData["questions"] as $questionData) {
                 $question = $section->questions()->create([
                     "question_text" => $questionData["question_text"],
                     "question_type" => $questionData["question_type"],
-                    "order_index" => $questionData["order_index"],
+                    "order_index" => (int) $questionData["order_index"],
                 ]);
 
                 if (
                     in_array($questionData["question_type"], [
                         "multiple_choice",
                         "checkboxes",
-                    ]) &&
-                    isset($questionData["options"])
+                    ])
                 ) {
-                    foreach ($questionData["options"] as $optionData) {
+                    foreach ($questionData["options"] ?? [] as $optionData) {
                         $question->options()->create([
                             "option_text" => $optionData["option_text"],
-                            "order_index" => $optionData["order_index"],
+                            "order_index" => (int) $optionData["order_index"],
                         ]);
                     }
                 }
@@ -144,21 +117,20 @@ class ChecklistService
 
     private function normalizeChecklist(Checklist $checklist): array
     {
-        $sections = $checklist->sections ?? collect();
-
         return [
             "name" => $checklist->name,
-            "sections" => $sections
+            "sections" => ($checklist->sections ?? collect())
                 ->map(
                     fn($section) => [
                         "title" => $section->title,
-                        "order_index" => $section->order_index,
+                        "order_index" => (int) $section->order_index,
                         "questions" => ($section->questions ?? collect())
                             ->map(
                                 fn($question) => [
                                     "question_text" => $question->question_text,
                                     "question_type" => $question->question_type,
-                                    "order_index" => $question->order_index,
+                                    "order_index" =>
+                                        (int) $question->order_index,
                                     "options" => (
                                         $question->options ?? collect()
                                     )
@@ -167,15 +139,62 @@ class ChecklistService
                                                 "option_text" =>
                                                     $option->option_text,
                                                 "order_index" =>
-                                                    $option->order_index,
+                                                    (int) $option->order_index,
                                             ]
                                         )
+                                        ->values()
                                         ->toArray(),
                                 ]
                             )
+                            ->values()
                             ->toArray(),
                     ]
                 )
+                ->values()
+                ->toArray(),
+        ];
+    }
+
+    private function normalizeIncoming(array $data): array
+    {
+        return [
+            "name" => $data["name"],
+            "sections" => collect($data["sections"])
+                ->map(
+                    fn($section) => [
+                        "title" => $section["title"],
+                        "order_index" => (int) $section["order_index"],
+                        "questions" => collect($section["questions"])
+                            ->map(
+                                fn($question) => [
+                                    "question_text" =>
+                                        $question["question_text"],
+                                    "question_type" =>
+                                        $question["question_type"],
+                                    "order_index" =>
+                                        (int) $question["order_index"],
+                                    "options" => collect(
+                                        $question["options"] ?? []
+                                    )
+                                        ->map(
+                                            fn($option) => [
+                                                "option_text" =>
+                                                    $option["option_text"],
+                                                "order_index" =>
+                                                    (int) $option[
+                                                        "order_index"
+                                                    ],
+                                            ]
+                                        )
+                                        ->values()
+                                        ->toArray(),
+                                ]
+                            )
+                            ->values()
+                            ->toArray(),
+                    ]
+                )
+                ->values()
                 ->toArray(),
         ];
     }

@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create("stores", function (Blueprint $table) {
             $table->increments("id");
             $table->string("code")->index();
-            $table->string("name");
+            $table->string("name")->index();
             $table->string("region_id");
             $table->string("area_id");
             $table->timestamps();

@@ -88,6 +88,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("checklist", ChecklistController::class);
 
     // Store Controller
+    Route::patch("store/{id}/toggle_archived", [
+        StoreController::class,
+        "toggleArchived",
+    ]);
     Route::apiResource("store", StoreController::class);
 
     // Patch Notes Controller

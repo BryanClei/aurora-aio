@@ -15,5 +15,15 @@ class StoreChecklist extends Model
 
     protected $table = "store_checklist";
 
-    protected $fillable = ["code", "region_id", "area_id", "checklist_id"];
+    protected $fillable = ["code", "store_id", "checklist_id"];
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class, "store_id", "id");
+    }
+
+    public function checklist()
+    {
+        return $this->belongsTo(Checklist::class, "checklist_id", "id");
+    }
 }

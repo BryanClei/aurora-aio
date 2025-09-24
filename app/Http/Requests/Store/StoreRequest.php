@@ -22,15 +22,15 @@ class StoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "code" => [
+            "name" => [
                 "required",
+                "string",
                 $this->route()->store
-                    ? "unique:stores,code," . $this->route()->store
-                    : "unique:stores,code",
+                    ? "unique:stores,name," . $this->route()->store
+                    : "unique:stores,name",
             ],
             "area_id" => ["required", "exists:areas,id"],
-            "region_id" => ["required", "exists:region,id"],
-            "checklist_id" => ["required", "exists:checklists,id"],
+            "region_id" => ["required", "exists:regions,id"],
         ];
     }
 }

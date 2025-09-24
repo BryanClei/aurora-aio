@@ -28,8 +28,8 @@ class ChecklistController extends Controller
         $status = $request->status;
         $pagination = $request->pagination;
 
-        return $checklist = Checklist::with("sections.questions.options")
-            ->when($status == "inactive", function ($query) {
+        $checklist = Checklist::with("sections.questions.options")
+            ->when($status == "inactive", function ($query) { 
                 $query->onlyTrashed();
             })
             ->useFilters()

@@ -89,7 +89,7 @@ class RegionController extends Controller
 
     public function toggleArchive(Request $request, $id)
     {
-        $region = Region::withTrashed()->find($id);
+        $region = $this->regionService->toggleArchived($id);
 
         if (!$region) {
             return $this->responseUnprocessable(

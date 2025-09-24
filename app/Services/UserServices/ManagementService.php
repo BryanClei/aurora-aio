@@ -71,6 +71,13 @@ class ManagementService
             return null;
         }
 
+        if ($user->id == auth()->id() || $user->role_id == 1) {
+            return [
+                "message" => __("messages.cannot_archive_own_account"),
+                "user" => [],
+            ];
+        }
+
         if ($user->trashed()) {
             $user->restore();
             $message = __("messages.success_restored", ["attribute" => "User"]);

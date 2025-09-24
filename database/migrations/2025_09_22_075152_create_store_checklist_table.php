@@ -13,16 +13,8 @@ return new class extends Migration {
         Schema::create("store_checklist", function (Blueprint $table) {
             $table->id();
             $table->string("code")->index();
-            $table->unsignedBigInteger("store_id");
-            $table
-                ->foreign("store_id")
-                ->references("id")
-                ->on("stores");
-            $table->unsignedBigInteger("checklist_id");
-            $table
-                ->foreign("checklist_id")
-                ->references("id")
-                ->on("checklists");
+            $table->string("store_id");
+            $table->string("checklist_id");
             $table->timestamps();
             $table->softDeletes();
         });

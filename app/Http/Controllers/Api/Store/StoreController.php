@@ -46,20 +46,54 @@ class StoreController extends Controller
         return $this->responseSuccess("Store display successfully", $store);
     }
 
-    public function show()
+    public function show($id)
     {
+        $store = Store::withTrashed()->find($id);
+
+        if (!$store) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        $transform_data = new StoreResource($store);
+
+        return $this->responseSuccess(
+            "Store display successfully",
+            $transform_data
+        );
     }
 
     public function store(StoreRequest $request)
     {
-        return "hello world";
+        $new_store = $this->storeService->createStore($request->all());
+
+        return $this->responseCreated(
+            "Store successfully created.",
+            $new_store["store"]
+        );
     }
 
-    public function update()
+    public function update(StoreRequest $request, $id)
     {
+        $updated_store = $this->storeService->updateStore($id, $request->all());
+
+        if (!$updated_store) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess(
+            $updated_store["message"],
+            $updated_store["store"]
+        );
     }
 
-    public function toggleArchived()
+    public function toggleArchived($id)
     {
+        $store = $this->storeService->toggleArchived($id);
+
+        if (!$store) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        return $this->responseSuccess($store["message"], $store["store"]);
     }
 }

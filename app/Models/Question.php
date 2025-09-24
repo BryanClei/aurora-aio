@@ -15,15 +15,10 @@ class Question extends Model
         "section_id",
         "question_text",
         "question_type",
-        "options",
         "order_index",
     ];
 
     protected $table = "checklist_questions";
-
-    protected $casts = [
-        "options" => "array",
-    ];
 
     public function section()
     {

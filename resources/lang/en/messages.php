@@ -8,4 +8,6 @@ return [
     "success_restored" => ":attribute successfully restored",
     "file_uploaded_successfully" => "File uploaded successfully.",
     "no_changes" => "No changes detected.",
+    "cannot_archive_own_account" =>
+        "You cannot archive your login account or super admin account.",
 ];

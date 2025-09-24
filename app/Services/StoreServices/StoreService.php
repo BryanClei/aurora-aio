@@ -7,31 +7,57 @@ use App\Models\Store;
 
 class StoreService
 {
-    public static function exampleMethod()
+    public static function createStore(array $data): array
     {
-        // Example logic
-        return "Example method logic";
+        $store = Store::create([
+            "name" => $data["name"],
+            "area_id" => $data["area_id"],
+            "region_id" => $data["region_id"],
+        ]);
+
+        return [
+            "store" => $store,
+        ];
     }
 
-    public function generateStoreCode(string $prefix = "ASC"): string
+    public static function updateStore(int $id, array $data): array
     {
-        $now = Carbon::now("Asia/Manila");
-        $year = $now->format("Y");
+        $store = Store::find($id);
 
-        $lastStore = Store::whereYear("created_at", $year)
-            ->where("code", "like", "$year-$prefix-%")
-            ->orderBy("id", "desc")
-            ->first();
-
-        $nextNumber = 1;
-        if ($lastStore) {
-            $lastNumber = (int) substr(
-                $lastStore->code,
-                strrpos($lastStore->code, "-") + 1
-            );
-            $nextNumber = $lastNumber + 1;
+        if (!$store) {
+            return [];
         }
 
-        return sprintf("%s-%s-%03d", $year, $prefix, $nextNumber);
+        $store->name = $data["name"];
+        $store->area_id = $data["area_id"];
+        $store->region_id = $data["region_id"];
+
+        if (!$store->isDirty()) {
+            $message = "No Changes";
+        } else {
+            $store->save();
+            $message = "Store successfully updated";
+        }
+
+        return ["message" => $message, "store" => $store];
+    }
+
+    public static function toggleArchived(int $id): array
+    {
+        $store = Store::withTrashed()->find($id);
+
+        if (!$store) {
+            return [];
+        }
+
+        if ($store->trashed()) {
+            $store->restore();
+            $message = "Store successfully restored";
+        } else {
+            $store->delete();
+            $message = "Store successfully archived";
+        }
+
+        return ["message" => $message, "store" => $store];
     }
 }
