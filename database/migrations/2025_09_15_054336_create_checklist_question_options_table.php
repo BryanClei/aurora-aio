@@ -10,21 +10,20 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("sections", function (Blueprint $table) {
-            $table->increments("id");
+        Schema::create("checklist_question_options", function (
+            Blueprint $table
+        ) {
+            $table->id();
             $table
-                ->foreignId("checklist_id")
-                ->constrained()
+                ->foreignId("question_id")
+                ->constrained("checklist_questions")
                 ->onDelete("cascade");
-            $table
-                ->string("title")
-                ->nullable()
-                ->index();
-            $table->longText("description")->nullable();
-            $table->decimal("percentage", 5, 2);
-            $table->integer("order")->default(1);
+            $table->string("option_text", 500);
+            $table->integer("order_index")->default(0);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(["question_id", "order_index"]);
         });
     }
 
@@ -33,6 +32,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("sections");
+        Schema::dropIfExists("checklist_question_options");
     }
 };

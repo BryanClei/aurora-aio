@@ -14,18 +14,22 @@ class Section extends Model
 
     protected string $default_filters = SectionFilter::class;
 
-    protected $table = "sections";
+    protected $table = "checklist_sections";
 
     protected $fillable = [
         "checklist_id",
         "title",
-        "description",
         "percentage",
-        "order",
+        "order_index",
     ];
 
     public function checklist()
     {
         return $this->belongsTo(Checklist::class, "checklist_id", "id");
+    }
+
+    public function questions()
+    {
+        return $this->hasMany(Question::class, "section_id", "id");
     }
 }

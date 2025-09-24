@@ -10,25 +10,21 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("survey_answers", function (Blueprint $table) {
+        Schema::create("checklist_questions_responses", function (
+            Blueprint $table
+        ) {
             $table->id();
-
             $table
-                ->foreignId("survey_session_id")
-                ->constrained()
-                ->cascadeOnDelete();
-
-            $table->unsignedInteger("question_id");
-            $table
-                ->foreign("question_id")
-                ->references("id")
-                ->on("questions")
+                ->foreignId("checklist_id")
+                ->constrained("checklists")
                 ->onDelete("cascade");
-
-            $table->boolean("is_compliant");
-            $table->longText("remarks")->nullable();
+            $table->string("respondent_id")->nullable();
+            $table->string("respondent_name")->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index("checklist_id");
+            $table->index("respondent_name");
         });
     }
 
@@ -37,6 +33,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("survey_answers");
+        Schema::dropIfExists("checklist_questions_answers");
     }
 };

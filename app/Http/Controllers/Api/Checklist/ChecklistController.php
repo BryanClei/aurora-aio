@@ -28,9 +28,10 @@ class ChecklistController extends Controller
         $status = $request->status;
         $pagination = $request->pagination;
 
-        $checklist = Checklist::when($status == "inactive", function ($query) {
-            $query->onlyTrashed();
-        })
+        return $checklist = Checklist::with("sections.questions.options")
+            ->when($status == "inactive", function ($query) {
+                $query->onlyTrashed();
+            })
             ->useFilters()
             ->dynamicPaginate();
 
@@ -76,27 +77,29 @@ class ChecklistController extends Controller
 
     public function update(ChecklistRequest $request, $id)
     {
-        $checklist = $this->checkListService->updateChecklist(
+        $result = $this->checkListService->updateChecklist(
             $id,
             $request->all()
         );
 
-        if (!$checklist) {
-            return $this->responseUnprocessable(
-                "",
-                __("messages.id_not_found")
+        if (!$result["has_changes"]) {
+            return $this->responseSuccess(
+                __("messages.no_changes"),
+                $result["checklist"]
             );
         }
 
         return $this->responseSuccess(
-            $checklist["message"],
-            $checklist["checklist"]
+            "Checklist updated successfully.",
+            $result["checklist"]
         );
     }
 
     public function toggleArchive($id)
     {
-        $checklist = Checklist::withTrashed()->find($id);
+        $checklist = Checklist::with("sections.questions.options")
+            ->withTrashed()
+            ->find($id);
 
         if (!$checklist) {
             return $this->responseUnprocessable(
@@ -114,12 +117,12 @@ class ChecklistController extends Controller
             );
         }
 
-        if (Section::where("checklist_id", $checklist->id)->exists()) {
-            return $this->responseUnprocessable(
-                "",
-                "Unable to archive. Checklist is currently in use."
-            );
-        }
+        // if (Section::where("checklist_id", $checklist->id)->exists()) {
+        //     return $this->responseUnprocessable(
+        //         "",
+        //         "Unable to archive. Checklist is currently in use."
+        //     );
+        // }
 
         $checklist->delete();
 

@@ -16,5 +16,11 @@ class Store extends Model
 
     protected $table = "stores";
 
-    protected $fillable = ["code"];
+    protected $fillable = [
+        "code",
+        "name",
+        "checklist_id",
+        "region_id",
+        "area_id",
+    ];
 }

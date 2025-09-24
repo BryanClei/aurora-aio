@@ -12,27 +12,10 @@ return new class extends Migration {
     {
         Schema::create("stores", function (Blueprint $table) {
             $table->increments("id");
-            $table->string("code");
+            $table->string("code")->index();
             $table->string("name");
-            $table->index(["code", "name"]);
-            $table->unsignedInteger("area_id");
-            $table
-                ->foreign("area_id")
-                ->references("id")
-                ->on("areas");
-            $table
-                ->unsignedInteger("store_head_id")
-                ->nullable()
-                ->index();
-            $table
-                ->foreign("store_head_id")
-                ->references("id")
-                ->on("users");
-            $table->unsignedBigInteger("checklist_id");
-            $table
-                ->foreign("checklist_id")
-                ->references("id")
-                ->on("checklists");
+            $table->string("region_id");
+            $table->string("area_id");
             $table->timestamps();
             $table->softDeletes();
         });

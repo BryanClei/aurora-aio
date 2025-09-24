@@ -17,8 +17,10 @@ class Checklist extends Model
 
     protected $fillable = ["name"];
 
-    public function section()
+    protected $table = "checklists";
+
+    public function sections()
     {
-        return $this->hasMany(Section::class, "id", "checklist_id");
+        return $this->hasMany(Section::class, "checklist_id", "id");
     }
 }
