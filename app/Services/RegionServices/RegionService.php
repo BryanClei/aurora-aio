@@ -2,6 +2,7 @@
 
 namespace App\Services\RegionServices;
 
+use App\Models\Area;
 use App\Models\Region;
 
 class RegionService
@@ -50,11 +51,12 @@ class RegionService
             $message = __("messages.success_restored", [
                 "attribute" => "Region",
             ]);
-        } elseif (Area::where("region_id", $region->id)->exists()) {
-            return [
-                "message" => "Unable to archive. Region is currently in use.",
-                "region" => $region,
-            ];
+        // } elseif (Area::where("region_id", $region->id)->exists()) {
+        //     return [
+        //         "message" => "Unable to archive. Region is currently in use.",
+        //         "region" => $region,
+        //         "status" => 409,
+        //     ];
         } else {
             $region->delete();
             $message = __("messages.success_archived", [
