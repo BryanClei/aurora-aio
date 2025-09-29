@@ -31,11 +31,13 @@ class AreaRequest extends FormRequest
             ],
             "region_id" => [
                 "required",
-                Rule::exists("regions", "id")->whereNull("deleted_at"),
+                "exists:regions,id,deleted_at,NULL",
+                // Rule::exists("regions", "id")->whereNull("deleted_at"),
             ],
             "area_head_id" => [
                 "required",
-                Rule::exists("users", "id")->whereNull("deleted_at"),
+                "exists:users,id,deleted_at,NULL",
+                // Rule::exists("users", "id")->whereNull("deleted_at"),
             ],
             "area_list" => "array",
         ];

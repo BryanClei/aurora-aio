@@ -98,6 +98,10 @@ class AreaController extends Controller
             );
         }
 
+        if ($area["success"] === false) {
+            return $this->responseUnprocessable("", $area["message"]);
+        }
+
         return $this->responseSuccess($area["message"], $area["area"]);
     }
 }

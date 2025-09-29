@@ -38,7 +38,7 @@ class RegionService
         return ["message" => $message, "region" => $region];
     }
 
-    public function toggleArchived(int $regionId): array
+    public function toggleArchived(int $regionId): ?array
     {
         $region = Region::withTrashed()->find($regionId);
 
@@ -51,19 +51,27 @@ class RegionService
             $message = __("messages.success_restored", [
                 "attribute" => "Region",
             ]);
-        // } elseif (Area::where("region_id", $region->id)->exists()) {
-        //     return [
-        //         "message" => "Unable to archive. Region is currently in use.",
-        //         "region" => $region,
-        //         "status" => 409,
-        //     ];
-        } else {
-            $region->delete();
-            $message = __("messages.success_archived", [
-                "attribute" => "Region",
-            ]);
+
+            return [
+                "success" => true,
+                "message" => $message,
+                "region" => $region,
+            ];
         }
 
-        return ["message" => $message, "region" => $region];
+        if (Area::where("region_id", $region->id)->exists()) {
+            return [
+                "success" => false,
+                "message" => "Unable to archive. Region is currently in use.",
+                "region" => $region,
+            ];
+        }
+
+        $region->delete();
+        $message = __("messages.success_archived", [
+            "attribute" => "Region",
+        ]);
+
+        return ["success" => true, "message" => $message, "region" => $region];
     }
 }

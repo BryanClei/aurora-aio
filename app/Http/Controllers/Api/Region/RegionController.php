@@ -89,15 +89,19 @@ class RegionController extends Controller
 
     public function toggleArchive(Request $request, $id)
     {
-        $region = $this->regionService->toggleArchived($id);
+        $result = $this->regionService->toggleArchived($id);
 
-        if (!$region) {
+        if (!$result) {
             return $this->responseUnprocessable(
                 "",
                 __("messages.id_not_found")
             );
         }
 
-        return $this->responseSuccess($region["message"], $region["region"]);
+        if ($result["success"] === false) {
+            return $this->responseUnprocessable("", $result["message"]);
+        }
+
+        return $this->responseSuccess($result["message"], $result["region"]);
     }
 }

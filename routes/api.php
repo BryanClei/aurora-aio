@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\Checklist\ChecklistController;
 use App\Http\Controllers\Api\PatchNote\PatchNoteController;
 use App\Http\Controllers\Api\User\UserManagementController;
+use App\Http\Controllers\Api\Store\StoreChecklistController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 
 Route::post("login", [AuthController::class, "login"]);
@@ -94,6 +95,13 @@ Route::middleware(["auth:sanctum"])->group(function () {
     ]);
     Route::apiResource("store", StoreController::class);
 
+    // Store Checklist Controller
+    Route::patch("store_checklist/{id}/toggle_archived", [
+        StoreChecklistController::class,
+        "toggleArchived",
+    ]);
+    Route::apiResource("store_checklist", StoreChecklistController::class);
+
     // Patch Notes Controller
     Route::get("patch_notes/download/{filename}", [
         PatchNoteController::class,
@@ -104,4 +112,6 @@ Route::middleware(["auth:sanctum"])->group(function () {
         "publishing_update",
     ]);
     Route::apiResource("patch_notes", PatchNoteController::class);
+
+    // Survey Controller
 });

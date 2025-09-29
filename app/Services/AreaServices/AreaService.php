@@ -51,17 +51,27 @@ class AreaService
         if ($area->trashed()) {
             $area->restore();
             $message = __("messages.success_restored", ["attribute" => "Area"]);
-        } elseif (Store::where("area_id", $area->id)->exists()) {
+
             return [
+                "success" => true,
+                "message" => $message,
+                "area" => $area,
+            ];
+        }
+
+        if (Store::where("area_id", $area->id)->exists()) {
+            return [
+                "success" => false,
                 "message" => "Unable to archive. Area is currently in use.",
                 "area" => $area,
             ];
-        } else {
-            $area->delete();
-            $message = __("messages.success_archived", ["attribute" => "Area"]);
         }
 
+        $area->delete();
+        $message = __("messages.success_archived", ["attribute" => "Area"]);
+
         return [
+            "success" => true,
             "message" => $message,
             "area" => $area,
         ];

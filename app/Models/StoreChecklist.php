@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Helpers\CodeHelper;
+use App\Filters\StoreChecklistFilter;
 use Essa\APIToolKit\Filters\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -25,5 +27,14 @@ class StoreChecklist extends Model
     public function checklist()
     {
         return $this->belongsTo(Checklist::class, "checklist_id", "id");
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($store_checklist) {
+            if (empty($store_checklist->code)) {
+                $store_checklist->code = CodeHelper::generateStoreCode();
+            }
+        });
     }
 }

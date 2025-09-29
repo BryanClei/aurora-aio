@@ -31,7 +31,8 @@ class RegionRequest extends FormRequest
             ],
             "region_head_id" => [
                 "required",
-                Rule::exists("users", "id")->whereNull("deleted_at"),
+                "exists:users,id,deleted_at,NULL",
+                // Rule::exists("users", "id")->whereNull("deleted_at"),
             ],
         ];
     }

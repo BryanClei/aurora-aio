@@ -29,8 +29,8 @@ class StoreRequest extends FormRequest
                     ? "unique:stores,name," . $this->route()->store
                     : "unique:stores,name",
             ],
-            "area_id" => ["required", "exists:areas,id"],
-            "region_id" => ["required", "exists:regions,id"],
+            "area_id" => ["required", "exists:areas,id,deleted_at,NULL"],
+            "region_id" => ["required", "exists:regions,id,deleted_at,NULL"],
         ];
     }
 }
