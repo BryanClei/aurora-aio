@@ -29,6 +29,11 @@ class Store extends Model
         return $this->belongsTo(Area::class, "area_id", "id");
     }
 
+    public function store_checklist()
+    {
+        return $this->hasMany(StoreChecklist::class, "store_id", "id");
+    }
+
     protected static function booted()
     {
         static::creating(function ($store) {

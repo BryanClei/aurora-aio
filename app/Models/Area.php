@@ -29,4 +29,9 @@ class Area extends Model
             "id"
         )->withTrashed();
     }
+
+    public function store()
+    {
+        return $this->hasMany(Store::class, "area_id", "id");
+    }
 }

@@ -20,7 +20,7 @@ return new class extends Migration {
                 ->onDelete("cascade");
             $table
                 ->foreignId("response_id")
-                ->constrained("checklist_questions_responses")
+                ->constrained("store_checklist_responses")
                 ->onDelete("cascade");
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();

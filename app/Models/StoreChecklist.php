@@ -15,9 +15,9 @@ class StoreChecklist extends Model
 
     protected string $default_filters = StoreChecklistFilter::class;
 
-    protected $table = "store_checklist";
+    protected $table = "store_checklists";
 
-    protected $fillable = ["code", "store_id", "checklist_id"];
+    protected $fillable = ["code", "store_id", "checklist_id", "status"];
 
     public function store()
     {
@@ -27,6 +27,11 @@ class StoreChecklist extends Model
     public function checklist()
     {
         return $this->belongsTo(Checklist::class, "checklist_id", "id");
+    }
+
+    public function sections()
+    {
+        return $this->hasMany(Section::class, "checklist_id", "id");
     }
 
     protected static function booted()

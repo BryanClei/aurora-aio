@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Resources\Store;
+namespace App\Http\Resources\Question;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class StoreChecklistResource extends JsonResource
+class QAQuestionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,10 +16,11 @@ class StoreChecklistResource extends JsonResource
     {
         return [
             "id" => $this->id,
-            "code" => $this->code,
-            "store" => $this->store,
-            "checklist" => $this->checklist,
-            "status" => $this->status,
+            "section_id" => $this->section_id,
+            "question_type" => $this->question_type,
+            "question_text" => $this->question_text,
+            "order_index" => $this->order_index,
+            "options" => $this->options,
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,

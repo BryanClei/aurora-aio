@@ -4,8 +4,9 @@ namespace App\Http\Resources\Store;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Section\QASectionResource;
 
-class StoreChecklistResource extends JsonResource
+class QAStoreChecklistResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,8 +18,9 @@ class StoreChecklistResource extends JsonResource
         return [
             "id" => $this->id,
             "code" => $this->code,
-            "store" => $this->store,
-            "checklist" => $this->checklist,
+            "checklist" => $this->checklist->name,
+            "sections" => QASectionResource::collection($this->sections),
+            "grade" => $this->grade,
             "status" => $this->status,
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,

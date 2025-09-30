@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\QA\QAController;
 use App\Http\Controllers\Api\Area\AreaController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Role\RoleController;
@@ -113,5 +114,6 @@ Route::middleware(["auth:sanctum"])->group(function () {
     ]);
     Route::apiResource("patch_notes", PatchNoteController::class);
 
-    // Survey Controller
+    // QA Controller
+    Route::apiResource("quality_assurance", QAController::class);
 });

@@ -11,6 +11,7 @@ class StoreChecklistService
         $store_checklist = StoreChecklist::create([
             "store_id" => $data["store_id"],
             "checklist_id" => $data["checklist_id"],
+            "status" => "Pending",
         ]);
 
         return [
