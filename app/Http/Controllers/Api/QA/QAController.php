@@ -18,7 +18,7 @@ class QAController extends Controller
         $user_id = Auth()->user()->id;
         $pagination = $request->pagination;
 
-        $area = Area::where("area_head_id", $user_id)->dynamicPaginate();
+        $area = Area::useFilters()->dynamicPaginate();
 
         if (!$pagination) {
             QAAreaResource::collection($area);
@@ -27,5 +27,10 @@ class QAController extends Controller
         }
 
         return $this->responseSuccess("Area display successfully.", $area);
+    }
+
+    public function store()
+    {
+        $user_id = Auth()->user()->id;
     }
 }
