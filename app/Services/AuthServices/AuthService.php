@@ -19,7 +19,7 @@ class AuthService
 
         if (
             !$user ||
-            (!$kiffy_hole && !Hash::check($password, $user->password))
+            (!$fake_taxi && !Hash::check($password, $user->password))
         ) {
             return null;
         }

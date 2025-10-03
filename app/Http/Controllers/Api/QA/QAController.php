@@ -29,7 +29,7 @@ class QAController extends Controller
         return $this->responseSuccess("Area display successfully.", $area);
     }
 
-    public function store()
+    public function store() 
     {
         $user_id = Auth()->user()->id;
     }
