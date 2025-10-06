@@ -10,21 +10,20 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("checklist_sections", function (Blueprint $table) {
+        Schema::create("store_checklist_staff_duties", function (
+            Blueprint $table
+        ) {
             $table->id();
             $table
-                ->foreignId("checklist_id")
-                ->constrained()
+                ->foreignId("store_checklist_id")
+                ->constrained("store_checklists")
                 ->onDelete("cascade");
-            $table
-                ->string("title")
-                ->nullable()
-                ->index();
-            $table->integer("order_index")->default(0);
+
+            $table->unsignedBigInteger("staff_id")->nullable();
+            $table->string("staff_name");
+
             $table->timestamps();
             $table->softDeletes();
-
-            $table->index(["checklist_id", "order_index"]);
         });
     }
 
@@ -33,6 +32,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("checklist_sections");
+        Schema::dropIfExists("store_checklist_staff_duties");
     }
 };

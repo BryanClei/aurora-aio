@@ -6,12 +6,20 @@ use App\Models\Area;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
+use App\Services\QAService\QAServices;
 use App\Http\Requests\QADisplayRequest;
 use App\Http\Resources\Area\QAAreaResource;
 
 class QAController extends Controller
 {
     use ApiResponse;
+
+    protected QAServices $qaServices;
+
+    public function __construct(QAServices $qaServices)
+    {
+        $this->qaServices = $qaServices;
+    }
 
     public function index(QADisplayRequest $request)
     {
@@ -29,8 +37,10 @@ class QAController extends Controller
         return $this->responseSuccess("Area display successfully.", $area);
     }
 
-    public function store() 
+    public function store(Request $request)
     {
         $user_id = Auth()->user()->id;
+
+        return $this->qaServices->storeResponse($request->all());
     }
 }

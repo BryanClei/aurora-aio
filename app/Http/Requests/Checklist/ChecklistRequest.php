@@ -35,11 +35,11 @@ class ChecklistRequest extends FormRequest
             "sections.*.questions.*.question_text" => ["required", "string"],
             "sections.*.questions.*.question_type" => [
                 "required",
-                "in:text,multiple_choice,checkboxes,paragraph",
+                "in:text,multiple_choice,checkboxes,paragraph,radio_button",
             ],
             "sections.*.questions.*.order_index" => ["required", "integer"],
             "sections.*.questions.*.options" => [
-                "required_if:sections.*.questions.*.question_type,multiple_choice,checkboxes",
+                "required_if:sections.*.questions.*.question_type,multiple_choice,checkboxes,radio_button",
                 "array",
             ],
             "sections.*.questions.*.options.*.option_text" =>

@@ -24,6 +24,13 @@ return new class extends Migration {
                 ->onDelete("cascade");
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();
+            $table->integer("store_visit")->nullable();
+            $table->integer("expired")->nullable();
+            $table->integer("condemned")->nullable();
+            $table->integer("store_duty_id")->nullable();
+            $table->longText("good_points")->nullable();
+            $table->longText("notes")->nullable();
+            $table->text("score")->nullable();
             $table->timestamps();
             $table->softDeletes();
 

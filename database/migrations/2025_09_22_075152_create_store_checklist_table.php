@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->string("code")->index();
             $table->string("store_id");
             $table->string("checklist_id");
-            $table->decimal("grade", 5, 2)->nullable();
             $table->string("status")->nullable();
             $table->timestamps();
             $table->softDeletes();
