@@ -29,7 +29,7 @@ class ChecklistController extends Controller
         $pagination = $request->pagination;
 
         $checklist = Checklist::with("sections.questions.options")
-            ->when($status == "inactive", function ($query) { 
+            ->when($status == "inactive", function ($query) {
                 $query->onlyTrashed();
             })
             ->useFilters()
@@ -53,7 +53,7 @@ class ChecklistController extends Controller
 
     public function show($id)
     {
-        $checklist = Checklist::find($id);
+        $checklist = Checklist::with("sections.questions.options")->find($id);
 
         if (!$checklist) {
             return $this->responseNotFound(__("messages.id_not_found"));

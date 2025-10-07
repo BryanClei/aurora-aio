@@ -33,7 +33,11 @@ class StoreChecklistController extends Controller
                 $query->onlyTrashed();
             }
         )
-            ->with("store", "checklist")
+            ->with(
+                "store",
+                "checklist",
+                "checklist.store_checklist.sections.questions.options"
+            )
             ->useFilters()
             ->dynamicPaginate();
 
@@ -58,7 +62,11 @@ class StoreChecklistController extends Controller
     public function show($id)
     {
         $store_checklist = StoreChecklist::withTrashed()
-            ->with("store", "checklist")
+            ->with(
+                "store",
+                "checklist",
+                "checklist.store_checklist.sections.questions.options"
+            )
             ->find($id);
 
         if (!$store_checklist) {

@@ -23,4 +23,9 @@ class Checklist extends Model
     {
         return $this->hasMany(Section::class, "checklist_id", "id");
     }
+
+    public function store_checklist()
+    {
+        return $this->hasMany(StoreChecklist::class, "checklist_id", "id");
+    }
 }
