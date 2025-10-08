@@ -35,6 +35,8 @@ class ChecklistController extends Controller
             ->useFilters()
             ->dynamicPaginate();
 
+        // Hello there
+
         if ($checklist->isEmpty()) {
             return $this->responseNotFound(__("messages.data_not_found"));
         }
