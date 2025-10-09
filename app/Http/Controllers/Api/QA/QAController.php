@@ -41,6 +41,11 @@ class QAController extends Controller
     {
         $user_id = Auth()->user()->id;
 
-        return $this->qaServices->storeResponse($request->all());
+        $answer = $this->qaServices->storeResponse($request->all());
+
+        return $this->responseCreated(
+            "Store checklist fill up successfully.",
+            $answer
+        );
     }
 }

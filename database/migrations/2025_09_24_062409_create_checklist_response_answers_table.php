@@ -22,6 +22,9 @@ return new class extends Migration {
                 ->foreignId("response_id")
                 ->constrained("store_checklist_responses")
                 ->onDelete("cascade");
+            $table->unsignedBigInteger("section_id");
+            $table->string("section_title");
+            $table->decimal("section_score")->nullable();
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();
             $table->integer("store_visit")->nullable();
@@ -30,7 +33,7 @@ return new class extends Migration {
             $table->integer("store_duty_id")->nullable();
             $table->longText("good_points")->nullable();
             $table->longText("notes")->nullable();
-            $table->text("score")->nullable();
+            $table->decimal("score", 5, 2)->nullable();
             $table->timestamps();
             $table->softDeletes();
 

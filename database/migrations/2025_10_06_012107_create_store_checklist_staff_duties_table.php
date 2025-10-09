@@ -14,6 +14,7 @@ return new class extends Migration {
             Blueprint $table
         ) {
             $table->id();
+            $table->unsignedBigInteger("store_checklist_weekly_records_id");
             $table
                 ->foreignId("store_checklist_id")
                 ->constrained("store_checklists")

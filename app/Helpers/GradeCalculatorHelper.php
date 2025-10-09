@@ -2,14 +2,11 @@
 
 namespace App\Helpers;
 
+use App\Models\User;
 use App\Models\Checklist;
 
 class GradeCalculatorHelper
 {
-    /**
-     * Calculate grade based on checklist responses
-     * Uses your DB structure: checklists → checklist_sections → checklist_questions
-     */
     public static function calculate(int $checklistId, array $responses): array
     {
         // Load checklist with sections and questions
@@ -92,7 +89,8 @@ class GradeCalculatorHelper
             "section_title" => $section->title,
             "max_points" => round($pointsPerSection, 2),
             "earned_points" => round($sectionScore, 2),
-            "percentage" => round(($sectionScore / $pointsPerSection) * 100, 2),
+            // "percentage" => round(($sectionScore / $pointsPerSection) * 100, 2),
+            "percentage" => round($sectionScore, 2),
             "total_questions" => $totalQuestionsInSection,
             "questions" => $questionBreakdown,
         ];
@@ -121,6 +119,7 @@ class GradeCalculatorHelper
             "max_points" => round($pointsPerQuestion, 2),
             "earned_points" => round($pointsEarned, 2),
             "has_remarks" => $hasRemarks,
+            "remarks" => $remarks,
             "answered" => $response !== null,
         ];
     }
@@ -144,5 +143,28 @@ class GradeCalculatorHelper
     ): float {
         $result = self::calculate($checklistId, $responses);
         return $result["grade"];
+    }
+
+    /**
+     * Fetch store duty information by IDs
+     *
+     * @param array $storeDutyIds
+     * @return \Illuminate\Support\Collection
+     */
+    public static function getStoreDuties(array $storeDutyIds)
+    {
+        return User::whereIn("id", $storeDutyIds)
+            ->select("id", "first_name", "last_name")
+            ->get()
+            ->map(function ($duty) {
+                return [
+                    "id" => $duty->id,
+                    "first_name" => $duty->first_name,
+                    "last_name" => $duty->last_name,
+                    "full_name" => trim(
+                        $duty->first_name . " " . $duty->last_name
+                    ),
+                ];
+            });
     }
 }
