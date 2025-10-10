@@ -25,6 +25,7 @@ return new class extends Migration {
             $table->unsignedBigInteger("section_id");
             $table->string("section_title");
             $table->decimal("section_score")->nullable();
+            $table->decimal("score_rating")->nullable();
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();
             $table->integer("store_visit")->nullable();

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\PatchNote\PatchNoteController;
 use App\Http\Controllers\Api\User\UserManagementController;
 use App\Http\Controllers\Api\Store\StoreChecklistController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
+use App\Http\Controllers\Api\ScoreRating\ScoreRatingController;
 use App\Http\Controllers\Api\RegionAreaHead\RegionAreaHeadController;
 
 Route::post("login", [AuthController::class, "login"]);
@@ -120,4 +121,11 @@ Route::middleware(["auth:sanctum"])->group(function () {
 
     // Region Area Head Controller
     Route::apiResource("region_area_head", RegionAreaHeadController::class);
+
+    // Score Rating Controller
+    Route::patch("rating/{id}/toggle_archived", [
+        ScoreRatingController::class,
+        "toggleArchived",
+    ]);
+    Route::apiResource("rating", ScoreRatingController::class);
 });
