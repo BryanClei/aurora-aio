@@ -18,7 +18,7 @@ class StoreChecklistResponse extends Model
         "section_title",
         "section_score",
         "question_id",
-        "question_name",
+        "question_text",
         "answer_text",
         "selected_options",
         "store_visit",

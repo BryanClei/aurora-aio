@@ -10,4 +10,6 @@ return [
     "no_changes" => "No changes detected.",
     "cannot_archive_own_account" =>
         "You cannot archive your login account or super admin account.",
+    "weekly_limit" =>
+        "Weekly survey has already been submitted. Please try again next week.",
 ];

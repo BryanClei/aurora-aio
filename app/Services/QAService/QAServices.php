@@ -7,21 +7,24 @@ use App\Models\StoreChecklistDuty;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\GradeCalculatorHelper;
 use App\Models\StoreChecklistResponse;
+use App\Helpers\FourWeekCalendarHelper;
 use App\Models\StoreChecklistWeeklyRecord;
 
 class QAServices
 {
     public static function storeResponse(array $data)
     {
-        return $gradeData = GradeCalculatorHelper::calculate(
+        $gradeData = GradeCalculatorHelper::calculate(
             $data["checklist_id"],
             $data["responses"]
         );
 
         $today = Carbon::today();
-        $weekOfMonth = $today->weekOfMonth;
-        $month = $today->month;
-        $year = $today->year;
+        $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
+
+        $week = $fourWeekInfo["week"];
+        $month = $fourWeekInfo["month"];
+        $year = $fourWeekInfo["year"];
 
         $storeDuties = GradeCalculatorHelper::getStoreDuties(
             $data["store_duty_id"]
@@ -33,7 +36,7 @@ class QAServices
 
         $record = StoreChecklistWeeklyRecord::create([
             "store_checklist_id" => $data["store_checklist_id"],
-            "week" => $weekOfMonth,
+            "week" => $week,
             "month" => $month,
             "year" => $year,
             "weekly_grade" => $gradeData["grade"] ?? null,
@@ -78,7 +81,7 @@ class QAServices
                         "section_title" => $section["section_title"],
                         "section_score" => $section["earned_points"],
                         "question_id" => $question["question_id"],
-                        "question_name" => $question["question_text"],
+                        "question_text" => $question["question_text"],
                         "answer_text" => $answerText,
                         "selected_options" => $selectedOptions,
                         "store_visit" => $data["store_visit"],
@@ -98,6 +101,7 @@ class QAServices
             "grade_data" => $gradeData,
             "weekly_record" => $record,
             "store_duties" => $storeDuties,
+            "week_info" => $fourWeekInfo,
         ];
     }
 }

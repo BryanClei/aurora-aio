@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\QA;
 
+use App\Rules\WeeklyLimitRule;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends FormRequest
@@ -24,6 +26,11 @@ class StoreRequest extends FormRequest
         return [
             "store_id" => ["required", "exists:stores,id"],
             "checklist_id" => ["required", "integer", "exists:checklists,id"],
+            "store_checklist_id" => [
+                "required",
+                "exists:store_checklists,id",
+                new WeeklyLimitRule(),
+            ],
             "code" => ["required", "string", "exists:store_checklists,code"],
             "responses" => ["required", "array", "min:1"],
             "responses.*.section_id" => [
@@ -34,8 +41,30 @@ class StoreRequest extends FormRequest
             "responses.*.question_id" => [
                 "required",
                 "integer",
-                "exists:questions,id",
+                "exists:checklist_questions,id",
             ],
+            "responses.*.question_text" => ["required", "string"],
+            "responses.*.question_type" => [
+                "required",
+                "string",
+                Rule::in([
+                    "multiple_choice",
+                    "checkboxes",
+                    "paragraph",
+                    "short_answer",
+                    "dropdown",
+                ]),
+            ],
+            "responses.*.answer" => ["required"],
+            "responses.*.remarks" => ["nullable", "string"],
+            "responses.*.attachment" => ["nullable", "string"],
+            "store_visit" => ["nullable", "date"],
+            "expired" => ["nullable"],
+            "condemned" => ["nullable"],
+            "good_points" => ["nullable", "string", "max:2000"],
+            "notes" => ["nullable", "string", "max:2000"],
+            "store_duty_id" => ["required", "array", "min:1"],
+            "store_duty_id.*" => ["required", "integer", "exists:users,id"],
         ];
     }
 }
