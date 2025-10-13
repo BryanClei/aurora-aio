@@ -20,11 +20,11 @@ class StoreChecklistRequest extends FormRequest
                 "integer",
                 "exists:stores,id",
                 $this->route("store_checklist")
-                    ? "unique:store_checklist,store_id," .
+                    ? "unique:store_checklists,store_id," .
                         $this->route("store_checklist") .
                         ",id,checklist_id," .
                         $this->input("checklist_id")
-                    : "unique:store_checklist,store_id,NULL,id,checklist_id," .
+                    : "unique:store_checklists,store_id,NULL,id,checklist_id," .
                         $this->input("checklist_id"),
             ],
             "store_name" => ["required", "string"],

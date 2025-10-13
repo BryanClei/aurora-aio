@@ -13,11 +13,12 @@ class StoreChecklistResponse extends Model
     protected $table = "checklist_response_answers";
 
     protected $fillable = [
-        "question_id",
         "response_id",
         "section_id",
         "section_title",
         "section_score",
+        "question_id",
+        "question_name",
         "answer_text",
         "selected_options",
         "store_visit",

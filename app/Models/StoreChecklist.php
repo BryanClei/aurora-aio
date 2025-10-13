@@ -26,7 +26,11 @@ class StoreChecklist extends Model
 
     public function checklist()
     {
-        return $this->belongsTo(Checklist::class, "checklist_id", "id");
+        return $this->belongsTo(
+            Checklist::class,
+            "checklist_id",
+            "id"
+        )->withTrashed();
     }
 
     public function sections()

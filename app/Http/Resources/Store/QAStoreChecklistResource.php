@@ -18,8 +18,9 @@ class QAStoreChecklistResource extends JsonResource
         return [
             "id" => $this->id,
             "code" => $this->code,
-            "checklist" => $this->checklist->name,
-            "sections" => QASectionResource::collection($this->sections),
+            "checklist" => $this->checklist->name ?? null,
+            "sections" =>
+                QASectionResource::collection($this->sections) ?? null,
             "store_visit" => $this->store_visit,
             "expired" => $this->expired,
             "condemned" => $this->condemned,

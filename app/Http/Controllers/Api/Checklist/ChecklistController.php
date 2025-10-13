@@ -117,12 +117,15 @@ class ChecklistController extends Controller
             );
         }
 
-        // if (Section::where("checklist_id", $checklist->id)->exists()) {
-        //     return $this->responseUnprocessable(
-        //         "",
-        //         "Unable to archive. Checklist is currently in use."
-        //     );
-        // }
+        if (
+            Section::where("checklist_id", $checklist->id)->exists() &&
+            !$checklist->trashed()
+        ) {
+            return $this->responseUnprocessable(
+                "",
+                "Unable to archive. Checklist is currently in use."
+            );
+        }
 
         $checklist->delete();
 

@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\User;
 use App\Models\Checklist;
+use App\Models\ScoreRating;
 
 class GradeCalculatorHelper
 {
@@ -89,7 +90,6 @@ class GradeCalculatorHelper
             "section_title" => $section->title,
             "max_points" => round($pointsPerSection, 2),
             "earned_points" => round($sectionScore, 2),
-            // "percentage" => round(($sectionScore / $pointsPerSection) * 100, 2),
             "percentage" => round($sectionScore, 2),
             "total_questions" => $totalQuestionsInSection,
             "questions" => $questionBreakdown,
@@ -103,13 +103,31 @@ class GradeCalculatorHelper
     ): array {
         $hasRemarks = false;
         $pointsEarned = 0;
+        $remarks = null;
+        $ratingId = null;
 
         if ($response) {
             $remarks = $response["remarks"] ?? null;
             $hasRemarks = !empty($remarks);
 
-            if (!$hasRemarks) {
-                $pointsEarned = $pointsPerQuestion;
+            if (
+                isset($response["question_type"]) &&
+                $response["question_type"] === "multiple_choice"
+            ) {
+                $ratingId = $response["answer"] ?? null;
+
+                if ($ratingId !== null) {
+                    $scoreRating = ScoreRating::find($ratingId);
+
+                    if ($scoreRating) {
+                        $scorePercentage = $scoreRating->score / 100;
+                        $pointsEarned = $pointsPerQuestion * $scorePercentage;
+                    }
+                }
+            } else {
+                if (!$hasRemarks) {
+                    $pointsEarned = $pointsPerQuestion;
+                }
             }
         }
 
@@ -121,6 +139,8 @@ class GradeCalculatorHelper
             "has_remarks" => $hasRemarks,
             "remarks" => $remarks,
             "answered" => $response !== null,
+            "rating_id" => $ratingId,
+            "question_type" => $response["question_type"] ?? null,
         ];
     }
 

@@ -13,7 +13,7 @@ class QAServices
 {
     public static function storeResponse(array $data)
     {
-        $gradeData = GradeCalculatorHelper::calculate(
+        return $gradeData = GradeCalculatorHelper::calculate(
             $data["checklist_id"],
             $data["responses"]
         );
@@ -32,7 +32,7 @@ class QAServices
         }
 
         $record = StoreChecklistWeeklyRecord::create([
-            "store_checklist_id" => $data["checklist_id"],
+            "store_checklist_id" => $data["store_checklist_id"],
             "week" => $weekOfMonth,
             "month" => $month,
             "year" => $year,
@@ -42,7 +42,7 @@ class QAServices
 
         $storeDutyRecord = StoreChecklistDuty::create([
             "store_checklist_weekly_record_id" => $record->id,
-            "store_checklist_id" => $data["checklist_id"],
+            "store_checklist_id" => $data["store_checklist_id"],
             "staff_id" => json_encode($storeDuties->pluck("id")->toArray()),
             "staff_name" => json_encode(
                 $storeDuties->pluck("full_name")->toArray()
@@ -73,11 +73,12 @@ class QAServices
                     }
 
                     StoreChecklistResponse::create([
-                        "question_id" => $question["question_id"],
                         "response_id" => $record->id,
                         "section_id" => $section["section_id"],
                         "section_title" => $section["section_title"],
                         "section_score" => $section["earned_points"],
+                        "question_id" => $question["question_id"],
+                        "question_name" => $question["question_text"],
                         "answer_text" => $answerText,
                         "selected_options" => $selectedOptions,
                         "store_visit" => $data["store_visit"],

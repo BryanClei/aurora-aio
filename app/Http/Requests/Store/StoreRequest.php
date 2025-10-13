@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Store;
 
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends FormRequest
@@ -30,7 +31,23 @@ class StoreRequest extends FormRequest
                     : "unique:stores,name",
             ],
             "area_id" => ["required", "exists:areas,id,deleted_at,NULL"],
-            "region_id" => ["required", "exists:regions,id,deleted_at,NULL"],
+            "region_id" => [
+                "required",
+                "exists:regions,id,deleted_at,NULL",
+                Rule::unique("stores")
+                    ->where(function ($query) {
+                        return $query->where("area_id", $this->area_id);
+                    })
+                    ->ignore($this->route()->store),
+            ],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            "region_id.unique" =>
+                "The combination of region and area already exists.",
         ];
     }
 }

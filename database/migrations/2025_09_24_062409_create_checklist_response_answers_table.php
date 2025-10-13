@@ -14,10 +14,7 @@ return new class extends Migration {
             Blueprint $table
         ) {
             $table->id();
-            $table
-                ->foreignId("question_id")
-                ->constrained("checklist_questions")
-                ->onDelete("cascade");
+
             $table
                 ->foreignId("response_id")
                 ->constrained("store_checklist_responses")
@@ -25,6 +22,11 @@ return new class extends Migration {
             $table->unsignedBigInteger("section_id");
             $table->string("section_title");
             $table->decimal("section_score")->nullable();
+            $table
+                ->foreignId("question_id")
+                ->constrained("checklist_questions")
+                ->onDelete("cascade");
+            $table->text("question_text");
             $table->decimal("score_rating")->nullable();
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();
