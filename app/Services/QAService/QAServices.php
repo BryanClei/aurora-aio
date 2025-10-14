@@ -2,9 +2,11 @@
 
 namespace App\Services\QAService;
 
+use ZipArchive;
 use Carbon\Carbon;
-use Illuminate\Http\UploadedFile;
 
+use Illuminate\Support\Str;
+use Illuminate\Http\UploadedFile;
 use App\Models\StoreChecklistDuty;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\GradeCalculatorHelper;
@@ -88,7 +90,7 @@ class QAServices
                                 "%s_Q%s_%s.%s",
                                 $data["code"] ?? "checklist",
                                 $question["question_id"],
-                                $week . "" . $month,
+                                $week . "" . $month . "" . $year,
                                 $file->getClientOriginalExtension()
                             );
 
@@ -136,5 +138,118 @@ class QAServices
             "store_duties" => $storeDuties,
             "week_info" => $fourWeekInfo,
         ];
+    }
+
+    public static function downloadAttachment($filenames = [], $zip = false)
+    {
+        $isLocal = config("app.env") === "local";
+
+        $basePath = $isLocal
+            ? storage_path(
+                "app" .
+                    DIRECTORY_SEPARATOR .
+                    "public" .
+                    DIRECTORY_SEPARATOR .
+                    "checklist_attachments"
+            )
+            : base_path("public_html/pretestomega/aurora/attachment");
+
+        if (empty($filenames)) {
+            return response()->json(
+                [
+                    "message" => "No filenames provided.",
+                ],
+                400
+            );
+        }
+
+        // 🟩 SINGLE FILE — Always direct download
+        if (count($filenames) === 1) {
+            $filePath = $basePath . DIRECTORY_SEPARATOR . $filenames[0]; // ✅ Use DIRECTORY_SEPARATOR
+
+            if (!file_exists($filePath)) {
+                return response()->json(
+                    [
+                        "message" => "File not found.",
+                        "file" => $filePath,
+                    ],
+                    404
+                );
+            }
+
+            return response()->download($filePath);
+        }
+
+        // 🟩 MULTIPLE FILES — ZIP if requested
+        if ($zip === true) {
+            $tempDir = storage_path("app" . DIRECTORY_SEPARATOR . "temp");
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            $zipName = "attachments_" . Str::random(6) . ".zip";
+            $zipPath = $tempDir . DIRECTORY_SEPARATOR . $zipName;
+
+            $zipper = new ZipArchive();
+            if ($zipper->open($zipPath, ZipArchive::CREATE) === true) {
+                $added = false;
+
+                foreach ($filenames as $file) {
+                    $filePath = $basePath . DIRECTORY_SEPARATOR . $file; // ✅ Use DIRECTORY_SEPARATOR
+                    if (file_exists($filePath)) {
+                        $zipper->addFile($filePath, basename($filePath));
+                        $added = true;
+                    }
+                }
+
+                $zipper->close();
+
+                if (!$added) {
+                    return response()->json(
+                        [
+                            "message" =>
+                                "No valid files found to include in ZIP.",
+                            "base_path" => $basePath,
+                        ],
+                        404
+                    );
+                }
+
+                return response()
+                    ->download($zipPath)
+                    ->deleteFileAfterSend(true);
+            }
+
+            return response()->json(
+                [
+                    "message" => "Failed to create ZIP file.",
+                ],
+                500
+            );
+        }
+
+        // 🟨 MULTIPLE FILES, zip = false — return download URLs instead
+        $urls = [];
+        $notFound = [];
+        foreach ($filenames as $file) {
+            $filePath = $basePath . DIRECTORY_SEPARATOR . $file; // ✅ Use DIRECTORY_SEPARATOR
+            if (file_exists($filePath)) {
+                $url = $isLocal
+                    ? asset("storage/checklist_attachments/" . $file)
+                    : url("pretestomega/aurora/attachment/" . $file);
+
+                $urls[] = $url;
+            } else {
+                $notFound[] = $filePath;
+            }
+        }
+
+        return response()->json([
+            "message" => "Multiple files available for download.",
+            "download_urls" => $urls,
+            "not_found" => $notFound,
+            "zip_used" => $zip,
+            "base_path" => $basePath,
+        ]);
     }
 }

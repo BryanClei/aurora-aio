@@ -49,4 +49,19 @@ class QAController extends Controller
             $answer
         );
     }
+
+    public function downloadAttachment(Request $request)
+    {
+        $filenames = $request->input("filenames", []);
+        $zip = $request->input("zip", false);
+
+        // Ensure boolean conversion
+        if (is_string($zip)) {
+            $zip = $zip === "true" || $zip === "1";
+        } else {
+            $zip = (bool) $zip;
+        }
+
+        return $this->qaServices->downloadAttachment($filenames, $zip);
+    }
 }

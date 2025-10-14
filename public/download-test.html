@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download Attachment Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 420px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 12px;
+      display: block;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #console {
+      background: #222;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 10px;
+      height: 150px;
+      overflow-y: auto;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Download Attachment Test</h2>
+
+    <label>API URL:</label>
+    <input id="apiUrl" type="text" value="http://127.0.0.1:8000/api/quality_assurance/download/attachments" />
+
+    <label>Filenames (comma-separated):</label>
+    <textarea id="filenames" rows="3">2025-ASC-001_Q1_102025.jpg</textarea>
+
+    <label>Zip Files?</label>
+    <select id="zip">
+      <option value="false">No (Single File)</option>
+      <option value="true">Yes (Multiple Files)</option>
+    </select>
+
+    <button id="downloadBtn">Download</button>
+
+    <h4>Console Output</h4>
+    <div id="console">Waiting for input...</div>
+  </div>
+
+  <script>
+    // Utility: log to on-screen console box
+    function logMessage(msg) {
+      const consoleBox = document.getElementById("console");
+      consoleBox.innerText += "\n" + msg;
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+      console.log(msg);
+    }
+
+    // Main download function
+    async function downloadAttachment() {
+      const apiUrl = document.getElementById("apiUrl").value.trim();
+      const filenames = document
+        .getElementById("filenames")
+        .value.split(",")
+        .map(f => f.trim())
+        .filter(f => f !== "");
+      const zip = document.getElementById("zip").value === "true";
+
+      if (filenames.length === 0) {
+        alert("Please enter at least one filename!");
+        return;
+      }
+
+      // Build payload — ALWAYS include zip explicitly
+      const payload = { 
+        filenames,
+        zip: zip
+      };
+
+      logMessage("➡ Sending request to: " + apiUrl);
+      logMessage("📦 Payload: " + JSON.stringify(payload));
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer 78|yLWdv0ChfJYy3x0tfmhEahsGL9I1gqA12JnkD9Ct1514b0ee"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        logMessage("📡 Response status: " + response.status);
+
+        if (!response.ok) {
+          const text = await response.text();
+          logMessage("❌ Server returned an error:\n" + text);
+          alert("Error " + response.status + ": " + response.statusText);
+          return;
+        }
+
+        // Check if response is JSON (multiple files, no zip)
+        const contentType = response.headers.get("Content-Type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          logMessage("📄 JSON Response received:");
+          logMessage(JSON.stringify(data, null, 2));
+          
+          if (data.download_urls && data.download_urls.length > 0) {
+            logMessage("🔗 Opening download URLs in new tabs...");
+            data.download_urls.forEach((url, index) => {
+              setTimeout(() => {
+                window.open(url, '_blank');
+                logMessage(`✅ Opened: ${url}`);
+              }, index * 500); // Stagger by 500ms to avoid popup blocking
+            });
+          }
+          return;
+        }
+
+        // Handle file download (single file or zip)
+        const blob = await response.blob();
+
+        let filename = "attachment";
+        const disposition = response.headers.get("Content-Disposition");
+        if (disposition && disposition.includes("filename=")) {
+          filename = disposition.split("filename=")[1].replace(/"/g, "");
+        } else if (zip) {
+          filename = "attachments.zip";
+        } else {
+          filename = filenames[0] || "attachment";
+        }
+
+        // Create a temporary link to trigger browser download
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        logMessage("✅ Download started: " + filename);
+      } catch (error) {
+        console.error(error);
+        logMessage("⚠️ Error: " + error.message);
+        alert("Failed: " + error.message);
+      }
+    }
+
+    // Attach event listener instead of inline onclick
+    document.getElementById("downloadBtn").addEventListener("click", downloadAttachment);
+  </script>
+</body>
+</html>

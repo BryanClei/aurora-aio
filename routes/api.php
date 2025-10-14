@@ -117,6 +117,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("patch_notes", PatchNoteController::class);
 
     // QA Controller
+    Route::post("quality_assurance/download/attachments", [
+        QAController::class,
+        "downloadAttachment",
+    ]);
     Route::apiResource("quality_assurance", QAController::class);
 
     // Region Area Head Controller
