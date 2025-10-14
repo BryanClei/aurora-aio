@@ -37,6 +37,7 @@ return new class extends Migration {
             $table->longText("good_points")->nullable();
             $table->longText("notes")->nullable();
             $table->decimal("score", 5, 2)->nullable();
+            $table->string("attachment")->nullable();
             $table->timestamps();
             $table->softDeletes();
 

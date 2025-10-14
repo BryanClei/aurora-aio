@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->increments("id");
             $table->string("module_type");
             $table->string("module_name");
-            $table->unsignedBigInteger("module_id");
+            // $table->unsignedBigInteger("module_id")->nullable();
             $table->string("action");
             $table->unsignedBigInteger("action_by");
             $table->string("action_by_name");
@@ -28,7 +28,6 @@ return new class extends Migration {
 
             $table->index("module_type");
             $table->index("module_name");
-            $table->index("module_id");
             $table->index("action");
             $table->index("action_by");
             $table->index("action_by_name");

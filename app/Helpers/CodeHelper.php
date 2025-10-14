@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\StoreChecklist;
 
 class CodeHelper
@@ -35,5 +36,28 @@ class CodeHelper
         }
 
         return sprintf("%s-%s-%03d", $year, $prefix, $nextNumber);
+    }
+
+    public static function getUserData()
+    {
+        $id = Auth()->user()->id;
+
+        $getUser = User::with("role")->find($id);
+
+        if ($getUser) {
+            $getUser->by =
+                $getUser->id_prefix .
+                "-" .
+                $getUser->id_no .
+                " - " .
+                $getUser->first_name .
+                " " .
+                $getUser->middle_name .
+                " " .
+                $getUser->last_name;
+            $getUser->role_name = $getUser->role->name;
+        }
+
+        return $getUser;
     }
 }

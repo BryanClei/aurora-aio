@@ -3,11 +3,14 @@
 namespace App\Services\QAService;
 
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
+
 use App\Models\StoreChecklistDuty;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\GradeCalculatorHelper;
 use App\Models\StoreChecklistResponse;
 use App\Helpers\FourWeekCalendarHelper;
+use Illuminate\Support\Facades\Storage;
 use App\Models\StoreChecklistWeeklyRecord;
 
 class QAServices
@@ -75,6 +78,35 @@ class QAServices
                         ]);
                     }
 
+                    $attachmentPath = null;
+
+                    if (isset($originalResponse["attachment"])) {
+                        $file = $originalResponse["attachment"];
+
+                        if ($file instanceof UploadedFile) {
+                            $filename = sprintf(
+                                "%s_Q%s_%s.%s",
+                                $data["code"] ?? "checklist",
+                                $question["question_id"],
+                                $week . "" . $month,
+                                $file->getClientOriginalExtension()
+                            );
+
+                            // 🔹 OPTION 1: LOCAL (uses Laravel Storage)
+                            // Uncomment when working locally:
+                            $attachmentPath = $file->storeAs(
+                                "checklist_attachments",
+                                $filename,
+                                "public"
+                            );
+
+                            // 🔹 OPTION 2: PRODUCTION (direct upload to cPanel public_html)
+                            // Uncomment when deployed to cPanel:
+                            // $file->move(public_path("attachment"), $filename);
+                            // $attachmentPath = "attachment/" . $filename;
+                        }
+                    }
+
                     StoreChecklistResponse::create([
                         "response_id" => $record->id,
                         "section_id" => $section["section_id"],
@@ -92,6 +124,7 @@ class QAServices
                         "notes" => $data["notes"],
                         "score" => $question["earned_points"],
                         "remarks" => $question["remarks"],
+                        "attachment" => $attachmentPath,
                     ]);
                 }
             }

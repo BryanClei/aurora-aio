@@ -28,6 +28,7 @@ class StoreChecklistResponse extends Model
         "good_points",
         "notes",
         "score",
+        "attachment",
     ];
 
     public function sections()
