@@ -117,6 +117,7 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("patch_notes", PatchNoteController::class);
 
     // QA Controller
+    Route::get("quality_assurance/{id}/filtered_week");
     Route::post("quality_assurance/download/attachments", [
         QAController::class,
         "downloadAttachment",

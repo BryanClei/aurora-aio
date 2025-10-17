@@ -38,6 +38,15 @@ class StoreChecklist extends Model
         return $this->hasMany(Section::class, "checklist_id", "id");
     }
 
+    public function weekly_record()
+    {
+        return $this->hasMany(
+            StoreChecklistWeeklyRecord::class,
+            "store_checklist_id",
+            "id"
+        );
+    }
+
     protected static function booted()
     {
         static::creating(function ($store_checklist) {

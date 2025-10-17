@@ -111,6 +111,7 @@ class QAServices
 
                     StoreChecklistResponse::create([
                         "response_id" => $record->id,
+                        "weekly_record_id" => $record->id,
                         "section_id" => $section["section_id"],
                         "section_title" => $section["section_title"],
                         "section_score" => $section["earned_points"],

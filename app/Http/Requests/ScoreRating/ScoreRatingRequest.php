@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\ScoreRating;
 
+use App\Rules\MaxThreeRecordRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ScoreRatingRequest extends FormRequest
@@ -25,11 +26,12 @@ class ScoreRatingRequest extends FormRequest
             "rating" => [
                 "required",
                 "integer",
+                new MaxThreeRecordRule(),
                 $this->route()->rating
                     ? "unique:score_rating,rating," . $this->route()->rating
                     : "unique:score_rating,rating",
             ],
-            "score" => ["required", "integer"],
+            "score" => ["required", "integer", "between:1,100"],
         ];
     }
 

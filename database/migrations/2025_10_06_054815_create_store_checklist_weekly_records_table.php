@@ -18,7 +18,6 @@ return new class extends Migration {
                 ->foreignId("store_checklist_id")
                 ->constrained("store_checklists")
                 ->onDelete("cascade");
-
             $table->integer("week")->index();
             $table->integer("month")->index();
             $table->integer("year")->index();

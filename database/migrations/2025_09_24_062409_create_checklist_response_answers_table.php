@@ -15,10 +15,11 @@ return new class extends Migration {
         ) {
             $table->id();
 
-            $table
-                ->foreignId("response_id")
-                ->constrained("store_checklist_responses")
-                ->onDelete("cascade");
+            // $table
+            //     ->foreignId("response_id")
+            //     ->constrained("store_checklist_responses")
+            //     ->onDelete("cascade");
+            $table->integer("weekly_record_id");
             $table->unsignedBigInteger("section_id");
             $table->string("section_title");
             $table->decimal("section_score")->nullable();

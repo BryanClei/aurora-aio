@@ -36,6 +36,15 @@ class StoreChecklistWeeklyRecord extends Model
         );
     }
 
+    public function weekly_response()
+    {
+        return $this->belongsTo(
+            StoreChecklistResponse::class,
+            "id",
+            "weekly_record_id"
+        );
+    }
+
     // Get period display
     public function getPeriodDisplayAttribute(): string
     {

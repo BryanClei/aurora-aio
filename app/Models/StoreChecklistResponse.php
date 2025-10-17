@@ -14,6 +14,7 @@ class StoreChecklistResponse extends Model
 
     protected $fillable = [
         "response_id",
+        "weekly_record_id",
         "section_id",
         "section_title",
         "section_score",
