@@ -28,6 +28,7 @@ return new class extends Migration {
                 ->constrained("checklist_questions")
                 ->onDelete("cascade");
             $table->text("question_text");
+            $table->text("question_type");
             $table->decimal("score_rating")->nullable();
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();
@@ -45,6 +46,8 @@ return new class extends Migration {
             $table->unique(["question_id", "response_id"]);
             $table->index("question_id");
             $table->index("response_id");
+            $table->index("question_type");
+            $table->index("question_text");
         });
     }
 

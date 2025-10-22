@@ -11,12 +11,22 @@ class Option extends Model
 {
     use HasFactory, SoftDeletes, Filterable;
 
-    protected $fillable = ["question_id", "option_text", "order_index"];
+    protected $fillable = [
+        "question_id",
+        "option_text",
+        "order_index",
+        "score_rating_id",
+    ];
 
     protected $table = "checklist_question_options";
 
     public function question()
     {
         return $this->belongsTo(Question::class, "question_id", "id");
+    }
+
+    public function scoreRating()
+    {
+        return $this->belongsTo(ScoreRating::class, "score_rating_id", "id");
     }
 }

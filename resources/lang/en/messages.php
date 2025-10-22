@@ -12,4 +12,8 @@ return [
         "You cannot archive your login account or super admin account.",
     "weekly_limit" =>
         "Weekly survey has already been submitted. Please try again next week.",
+    "region_head_no_setup" =>
+        "Region head for this region is not set. Please contact support.",
+    "region_head_not_found" =>
+        "Region head for this region is not found! Please contact support.",
 ];

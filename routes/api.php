@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Region\RegionController;
 use App\Http\Controllers\Api\Checklist\ChecklistController;
 use App\Http\Controllers\Api\PatchNote\PatchNoteController;
 use App\Http\Controllers\Api\User\UserManagementController;
+use App\Http\Controllers\Api\QA\ApproverDashboardController;
 use App\Http\Controllers\Api\Store\StoreChecklistController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 use App\Http\Controllers\Api\ScoreRating\ScoreRatingController;
@@ -122,6 +123,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
         QAController::class,
         "downloadAttachment",
     ]);
+    Route::post("quality_assurance/auto_skip", [
+        QAController::class,
+        "weeklySkipped",
+    ]);
     Route::apiResource("quality_assurance", QAController::class);
 
     // Region Area Head Controller
@@ -133,4 +138,14 @@ Route::middleware(["auth:sanctum"])->group(function () {
         "toggleArchived",
     ]);
     Route::apiResource("rating", ScoreRatingController::class);
+
+    // Survey Dashboard Controller
+    Route::post("approver_dashboard/{id}/approved", [
+        ApproverDashboardController::class,
+        "approved",
+    ]);
+    Route::apiResource(
+        "approver_dashboard",
+        ApproverDashboardController::class
+    );
 });

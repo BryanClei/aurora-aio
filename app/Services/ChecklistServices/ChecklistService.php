@@ -35,26 +35,40 @@ class ChecklistService
                     isset($questionData["options"])
                 ) {
                     foreach ($questionData["options"] as $optionData) {
-                        $question->options()->create([
+                        $optionPayload = [
                             "question_id" => $question->id,
                             "option_text" => $optionData["option_text"],
                             "order_index" => $optionData["order_index"],
-                        ]);
+                        ];
+
+                        // Add score_rating_id only for multiple_choice questions
+                        if (
+                            $questionData["question_type"] === "multiple_choice"
+                        ) {
+                            $scoreRating =
+                                $optionData["score_rating"] ??
+                                $optionData["order_index"];
+                            $optionPayload["score_rating_id"] = $scoreRating;
+                        }
+
+                        $question->options()->create($optionPayload);
                     }
                 }
             }
         }
 
-        $new_checklist->fresh()->load(["sections.questions.options"]);
+        $new_checklist
+            ->fresh()
+            ->load(["sections.questions.options.scoreRating"]);
 
         return ["checklist" => $new_checklist];
     }
 
     public function updateChecklist(int $checklistId, array $data): array
     {
-        $checklist = Checklist::with("sections.questions.options")->find(
-            $checklistId
-        );
+        $checklist = Checklist::with(
+            "sections.questions.options.scoreRating"
+        )->find($checklistId);
 
         if (!$checklist) {
             return [
@@ -98,10 +112,22 @@ class ChecklistService
                     ])
                 ) {
                     foreach ($questionData["options"] ?? [] as $optionData) {
-                        $question->options()->create([
+                        $optionPayload = [
                             "option_text" => $optionData["option_text"],
                             "order_index" => (int) $optionData["order_index"],
-                        ]);
+                        ];
+
+                        // Add score_rating_id only for multiple_choice questions
+                        if (
+                            $questionData["question_type"] === "multiple_choice"
+                        ) {
+                            $scoreRating =
+                                $optionData["score_rating"] ??
+                                $optionData["order_index"];
+                            $optionPayload["score_rating_id"] = $scoreRating;
+                        }
+
+                        $question->options()->create($optionPayload);
                     }
                 }
             }
@@ -110,7 +136,7 @@ class ChecklistService
         return [
             "checklist" => $checklist
                 ->fresh()
-                ->load(["sections.questions.options"]),
+                ->load(["sections.questions.options.scoreRating"]),
             "has_changes" => true,
         ];
     }
@@ -134,14 +160,27 @@ class ChecklistService
                                     "options" => (
                                         $question->options ?? collect()
                                     )
-                                        ->map(
-                                            fn($option) => [
+                                        ->map(function ($option) use (
+                                            $question
+                                        ) {
+                                            $normalized = [
                                                 "option_text" =>
                                                     $option->option_text,
                                                 "order_index" =>
                                                     (int) $option->order_index,
-                                            ]
-                                        )
+                                            ];
+
+                                            if (
+                                                $question->question_type ===
+                                                "multiple_choice"
+                                            ) {
+                                                $normalized["score_rating"] =
+                                                    (int) ($option->score_rating_id ??
+                                                        $option->order_index);
+                                            }
+
+                                            return $normalized;
+                                        })
                                         ->values()
                                         ->toArray(),
                                 ]
@@ -176,16 +215,31 @@ class ChecklistService
                                     "options" => collect(
                                         $question["options"] ?? []
                                     )
-                                        ->map(
-                                            fn($option) => [
+                                        ->map(function ($option) use (
+                                            $question
+                                        ) {
+                                            $normalized = [
                                                 "option_text" =>
                                                     $option["option_text"],
                                                 "order_index" =>
                                                     (int) $option[
                                                         "order_index"
                                                     ],
-                                            ]
-                                        )
+                                            ];
+
+                                            if (
+                                                $question["question_type"] ===
+                                                "multiple_choice"
+                                            ) {
+                                                $normalized["score_rating"] =
+                                                    (int) ($option[
+                                                        "score_rating"
+                                                    ] ??
+                                                        $option["order_index"]);
+                                            }
+
+                                            return $normalized;
+                                        })
                                         ->values()
                                         ->toArray(),
                                 ]

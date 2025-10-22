@@ -120,4 +120,20 @@ class QAController extends Controller
 
         return $this->qaServices->downloadAttachment($filenames, $zip);
     }
+
+    public function weeklySkipped(Request $request)
+    {
+        $user_id = Auth()->user()->id;
+
+        $answer = $this->qaServices->autoSkip($request->all());
+
+        if (is_string($answer)) {
+            return $this->responseInvalid($answer);
+        }
+
+        return $this->responseCreated(
+            "Store checklist skipped successfully.",
+            $answer
+        );
+    }
 }

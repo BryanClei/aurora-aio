@@ -20,6 +20,9 @@ class StoreChecklistWeeklyRecord extends Model
         "grade_source",
         "graded_by",
         "grade_notes",
+        "store_visit",
+        "expired",
+        "condemned",
     ];
 
     protected $casts = [
@@ -38,11 +41,16 @@ class StoreChecklistWeeklyRecord extends Model
 
     public function weekly_response()
     {
-        return $this->belongsTo(
+        return $this->hasMany(
             StoreChecklistResponse::class,
-            "id",
-            "weekly_record_id"
+            "weekly_record_id",
+            "id"
         );
+    }
+
+    public function weekly_skipped()
+    {
+        return $this->belongsTo(AutoSkipped::class, "id", "weekly_id");
     }
 
     // Get period display

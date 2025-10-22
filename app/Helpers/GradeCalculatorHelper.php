@@ -8,8 +8,11 @@ use App\Models\ScoreRating;
 
 class GradeCalculatorHelper
 {
-    public static function calculate(int $checklistId, array $responses): array
-    {
+    public static function calculate(
+        int $checklistId,
+        array $responses,
+        bool $isStoreVisit = false
+    ): array {
         // Load checklist with sections and questions
         $checklist = Checklist::with(["sections.questions"])->findOrFail(
             $checklistId
@@ -39,6 +42,11 @@ class GradeCalculatorHelper
             $sectionBreakdown[] = $sectionData;
         }
 
+        // If store visit is true, set grade to 0
+        if ($isStoreVisit) {
+            $totalEarnedScore = 0;
+        }
+
         return [
             "grade" => round($totalEarnedScore, 2),
             "total_score" => round($totalEarnedScore, 2),
@@ -47,6 +55,7 @@ class GradeCalculatorHelper
             "total_sections" => $totalSections,
             "points_per_section" => round($pointsPerSection, 2),
             "breakdown" => $sectionBreakdown,
+            "store_visit" => $isStoreVisit,
         ];
     }
 
@@ -159,9 +168,10 @@ class GradeCalculatorHelper
 
     public static function calculateQuick(
         int $checklistId,
-        array $responses
+        array $responses,
+        bool $isStoreVisit = false
     ): float {
-        $result = self::calculate($checklistId, $responses);
+        $result = self::calculate($checklistId, $responses, $isStoreVisit);
         return $result["grade"];
     }
 

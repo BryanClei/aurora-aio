@@ -29,11 +29,15 @@ return new class extends Migration {
             $table->unsignedBigInteger("graded_by")->nullable();
             $table->text("grade_notes")->nullable();
 
+            $table->integer("store_visit")->nullable();
+            $table->integer("expired")->nullable();
+            $table->integer("condemned")->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 
             $table->unique(
-                ["store_checklist_id", "week", "year"],
+                ["store_checklist_id", "week", "month", "year"],
                 "unique_weekly_record"
             );
 
