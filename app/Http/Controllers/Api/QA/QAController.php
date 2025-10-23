@@ -42,6 +42,7 @@ class QAController extends Controller
                     ->orderBy("week", "asc");
             },
         ])
+            ->whereHas("store")
             ->useFilters()
             ->dynamicPaginate();
 
@@ -63,8 +64,12 @@ class QAController extends Controller
         $month = $request->month;
         $year = $request->year;
         $week = $request->week;
+        $checklist_id = $request->checklist_id;
 
         $area = Store::with([
+            "store_checklist" => function ($q) use ($checklist_id) {
+                $q->where("id", $checklist_id);
+            },
             "store_checklist.weekly_record" => function ($q) use (
                 $month,
                 $year,
@@ -75,7 +80,8 @@ class QAController extends Controller
                     ->when($week, fn($query) => $query->where("week", $week))
                     ->orderBy("week", "asc");
             },
-            "store_checklist.weekly_record.weekly_response",
+            "store_checklist.weekly_record.users",
+            "store_checklist.weekly_record.weekly_response.staff_on_duty",
         ])->find($id);
 
         if (!$area) {

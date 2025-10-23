@@ -5,7 +5,7 @@ namespace App\Http\Resources\Weekly;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class WeeklyQAStoreChecklistResource extends JsonResource
+class WeeklyStaffOnDutyResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,11 +16,9 @@ class WeeklyQAStoreChecklistResource extends JsonResource
     {
         return [
             "id" => $this->id,
-            "code" => $this->code,
-            "checklist" => $this->checklist->name ?? null,
-            "weekly_record" => WeeklyRecordResource::collection(
-                $this->weekly_record
-            ),
+            "store_checklist_id" => $this->store_checklist_id,
+            "staff_id" => json_decode($this->staff_id, true),
+            "staff_name" => json_decode($this->staff_name, true),
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,

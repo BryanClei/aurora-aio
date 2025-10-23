@@ -18,6 +18,7 @@ class StoreChecklistResponse extends Model
         "section_id",
         "section_title",
         "section_score",
+        "section_order_index",
         "question_id",
         "question_text",
         "question_type",
@@ -36,5 +37,14 @@ class StoreChecklistResponse extends Model
     public function sections()
     {
         return $this->belongsTo(Section::class, "section_id", "id");
+    }
+
+    public function staff_on_duty()
+    {
+        return $this->belongsTo(
+            StoreChecklistDuty::class,
+            "store_duty_id",
+            "id"
+        );
     }
 }

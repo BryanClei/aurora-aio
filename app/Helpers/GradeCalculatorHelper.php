@@ -70,6 +70,7 @@ class GradeCalculatorHelper
             return [
                 "section_id" => $section->id,
                 "section_title" => $section->title,
+                "section_order_index" => $section->order_index,
                 "max_points" => round($pointsPerSection, 2),
                 "earned_points" => 0,
                 "percentage" => 0,
@@ -97,6 +98,7 @@ class GradeCalculatorHelper
         return [
             "section_id" => $section->id,
             "section_title" => $section->title,
+            "section_order_index" => $section->order_index,
             "max_points" => round($pointsPerSection, 2),
             "earned_points" => round($sectionScore, 2),
             "percentage" => round($sectionScore, 2),
@@ -143,6 +145,7 @@ class GradeCalculatorHelper
         return [
             "question_id" => $question->id,
             "question_text" => $question->question_text,
+            "question_order_index" => $question->order_index,
             "max_points" => round($pointsPerQuestion, 2),
             "earned_points" => round($pointsEarned, 2),
             "has_remarks" => $hasRemarks,

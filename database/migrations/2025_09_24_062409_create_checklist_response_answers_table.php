@@ -23,12 +23,14 @@ return new class extends Migration {
             $table->unsignedBigInteger("section_id");
             $table->string("section_title");
             $table->decimal("section_score")->nullable();
+            $table->string("section_order_index")->nullable();
             $table
                 ->foreignId("question_id")
                 ->constrained("checklist_questions")
                 ->onDelete("cascade");
             $table->text("question_text");
             $table->text("question_type");
+            $table->string("question_order_index")->nullable();
             $table->decimal("score_rating")->nullable();
             $table->text("answer_text")->nullable();
             $table->json("selected_options")->nullable();

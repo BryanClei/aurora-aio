@@ -24,11 +24,13 @@ class QAServices
     {
         $isStoreVisit = ($data["store_visit"] ?? 0) == 1;
 
-        $gradeData = GradeCalculatorHelper::calculate(
+        return $gradeData = GradeCalculatorHelper::calculate(
             $data["checklist_id"],
             $data["responses"],
             $isStoreVisit
         );
+
+        // return $data["answer"];
 
         $today = Carbon::today();
         $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);

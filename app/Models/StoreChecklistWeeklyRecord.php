@@ -60,6 +60,11 @@ class StoreChecklistWeeklyRecord extends Model
             Carbon::create($this->year, $this->month)->format("F Y");
     }
 
+    public function users()
+    {
+        return $this->belongsTo(User::class, "graded_by", "id");
+    }
+
     // Get week date range
     public function getWeekRangeAttribute(): array
     {
