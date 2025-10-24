@@ -55,9 +55,20 @@ class StoreRequest extends FormRequest
                     "dropdown",
                 ]),
             ],
-            "responses.*.answer" => ["required"],
+            "responses.*.answer" => ["nullable"],
             "responses.*.remarks" => ["nullable"],
-            "responses.*.attachment" => ["nullable"],
+            "responses.*.attachment" => [
+                "nullable",
+                "image",
+                "mimes:jpeg,jpg,png,gif,webp",
+                "max:10240",
+            ],
+            "responses.*.attachment.*" => [
+                "nullable",
+                "image",
+                "mimes:jpeg,jpg,png,gif,webp",
+                "max:10240",
+            ],
             "store_visit" => ["nullable", "date"],
             "expired" => ["nullable"],
             "condemned" => ["nullable"],
@@ -65,6 +76,35 @@ class StoreRequest extends FormRequest
             "notes" => ["nullable", "string", "max:2000"],
             "store_duty_id" => ["required", "array", "min:1"],
             "store_duty_id.*" => ["required", "integer", "exists:users,id"],
+        ];
+
+        foreach ($this->input("responses", []) as $index => $response) {
+            if (
+                isset($response["question_type"]) &&
+                $response["question_type"] !== "paragraph"
+            ) {
+                $rules["responses.$index.answer"] = ["required"];
+            }
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            "responses.*.attachment.image" =>
+                "The attachment must be an image file.",
+            "responses.*.attachment.mimes" =>
+                "The attachment must be a file of type: jpeg, jpg, png, gif, webp.",
+            "responses.*.attachment.max" =>
+                "The attachment may not be greater than 10MB.",
+            "responses.*.attachment.*.image" =>
+                "All attachments must be image files.",
+            "responses.*.attachment.*.mimes" =>
+                "All attachments must be files of type: jpeg, jpg, png, gif, webp.",
+            "responses.*.attachment.*.max" =>
+                "Each attachment may not be greater than 10MB.",
         ];
     }
 }

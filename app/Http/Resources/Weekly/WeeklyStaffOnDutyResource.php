@@ -14,11 +14,23 @@ class WeeklyStaffOnDutyResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $staffIds = json_decode($this->staff_id, true) ?? [];
+        $staffNames = json_decode($this->staff_name, true) ?? [];
+
+        $staff = [];
+        foreach ($staffIds as $index => $id) {
+            $staff[] = [
+                "id" => $id,
+                "name" => $staffNames[$index] ?? null,
+            ];
+        }
+
         return [
             "id" => $this->id,
             "store_checklist_id" => $this->store_checklist_id,
             "staff_id" => json_decode($this->staff_id, true),
             "staff_name" => json_decode($this->staff_name, true),
+            "staff" => $staff,
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,

@@ -22,6 +22,7 @@ class StoreChecklistResponse extends Model
         "question_id",
         "question_text",
         "question_type",
+        "question_order_index",
         "answer_text",
         "selected_options",
         "store_visit",

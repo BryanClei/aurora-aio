@@ -16,6 +16,7 @@ use App\Helpers\GradeCalculatorHelper;
 use App\Models\StoreChecklistResponse;
 use App\Helpers\FourWeekCalendarHelper;
 use Illuminate\Support\Facades\Storage;
+use App\Helpers\ChecklistSnapshotHelper;
 use App\Models\StoreChecklistWeeklyRecord;
 
 class QAServices
@@ -24,10 +25,19 @@ class QAServices
     {
         $isStoreVisit = ($data["store_visit"] ?? 0) == 1;
 
-        return $gradeData = GradeCalculatorHelper::calculate(
+        $gradeData = GradeCalculatorHelper::calculate(
             $data["checklist_id"],
             $data["responses"],
             $isStoreVisit
+        );
+
+        // 🔥 CREATE COMPLETE AUDIT TRAIL SNAPSHOT
+        $auditSnapshot = ChecklistSnapshotHelper::createSnapshot(
+            $data,
+            $gradeData
+        );
+        $auditSnapshotJson = ChecklistSnapshotHelper::encodeSnapshot(
+            $auditSnapshot
         );
 
         // return $data["answer"];
@@ -131,8 +141,12 @@ class QAServices
                         "section_id" => $section["section_id"],
                         "section_title" => $section["section_title"],
                         "section_score" => $section["earned_points"],
+                        "section_order_index" =>
+                            $section["section_order_index"],
                         "question_id" => $question["question_id"],
                         "question_text" => $question["question_text"],
+                        "question_order_index" =>
+                            $question["question_order_index"],
                         "answer_text" => $answerText,
                         "selected_options" => $selectedOptions,
                         "store_duty_id" => $storeDutyRecord->id,

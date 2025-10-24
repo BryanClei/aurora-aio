@@ -116,6 +116,7 @@ class GradeCalculatorHelper
         $pointsEarned = 0;
         $remarks = null;
         $ratingId = null;
+        $answerText = null;
 
         if ($response) {
             $remarks = $response["remarks"] ?? null;
@@ -126,6 +127,7 @@ class GradeCalculatorHelper
                 $response["question_type"] === "multiple_choice"
             ) {
                 $ratingId = $response["answer"] ?? null;
+                $answerText = $response["answer_text"] ?? null;
 
                 if ($ratingId !== null) {
                     $scoreRating = ScoreRating::find($ratingId);
@@ -134,6 +136,26 @@ class GradeCalculatorHelper
                         $scorePercentage = $scoreRating->score / 100;
                         $pointsEarned = $pointsPerQuestion * $scorePercentage;
                     }
+                }
+            } elseif (
+                isset($response["question_type"]) &&
+                $response["question_type"] === "checkboxes"
+            ) {
+                // Add checkboxes handling
+                $answerText = $response["answer_text"] ?? null;
+
+                if (!$hasRemarks) {
+                    $pointsEarned = $pointsPerQuestion;
+                }
+            } elseif (
+                isset($response["question_type"]) &&
+                $response["question_type"] === "paragraph"
+            ) {
+                // Add paragraph handling
+                $answerText = $response["answer_text"] ?? null;
+
+                if (!$hasRemarks) {
+                    $pointsEarned = $pointsPerQuestion;
                 }
             } else {
                 if (!$hasRemarks) {
@@ -151,6 +173,7 @@ class GradeCalculatorHelper
             "has_remarks" => $hasRemarks,
             "remarks" => $remarks,
             "answered" => $response !== null,
+            "answer_text" => $answerText, // Add this to the return array
             "rating_id" => $ratingId,
             "question_type" => $response["question_type"] ?? null,
         ];
