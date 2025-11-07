@@ -53,7 +53,10 @@ class ChecklistController extends Controller
 
     public function show($id)
     {
-        $checklist = Checklist::with("sections.questions.options")->find($id);
+        $checklist = Checklist::with(
+            "sections.questions.options",
+            "sections.category"
+        )->find($id);
 
         if (!$checklist) {
             return $this->responseNotFound(__("messages.id_not_found"));

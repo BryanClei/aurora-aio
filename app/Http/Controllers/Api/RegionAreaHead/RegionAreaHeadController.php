@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\RegionAreaHead;
 
 use App\Models\Area;
+use App\Models\Region;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Resources\Area\QAAreaResource;
+use App\Http\Resources\Region\QARegionResource;
 use App\Http\Requests\RegionAreaHeadDisplayRequest;
 
 class RegionAreaHeadController extends Controller
@@ -19,36 +21,39 @@ class RegionAreaHeadController extends Controller
         $user_type = $request->user_type;
         $pagination = $request->pagination;
 
-        $area = Area::with("region.region_head", "area_head")
-            ->when($user_type === "region_head", function ($query) use (
-                $user_id
-            ) {
-                $query->whereHas("region.region_head", function ($query) use (
+        $query =
+            $user_type === "region_head"
+                ? Region::with(["area.area_head", "region_head"])->whereHas(
+                    "region_head",
+                    fn($q) => $q->where("id", $user_id)
+                )
+                : Area::with(["region.region_head", "area_head"])->where(
+                    "area_head_id",
                     $user_id
-                ) {
-                    $query->where("id", $user_id);
-                });
-            })
-            ->when($user_type === "area_head", function ($query) use (
-                $user_id
-            ) {
-                $query->whereHas("area_head", function ($query) use ($user_id) {
-                    $query->where("id", $user_id);
-                });
-            })
-            ->useFilters()
-            ->dynamicPaginate();
+                );
 
-        if ($area->isEmpty()) {
+        $data = $query->useFilters()->dynamicPaginate();
+
+        if ($data->isEmpty()) {
             return $this->responseNotFound(__("messages.data_not_found"));
         }
 
+        $message_type = $user_type === "region_head" ? "Region" : "Area";
+
         if (!$pagination) {
-            QAAreaResource::collection($area);
+            $user_type === "region_head"
+                ? QARegionResource::collection($data)
+                : QAAreaResource::collection($data);
         } else {
-            $area = QAAreaResource::collection($area);
+            $data =
+                $user_type === "region_head"
+                    ? QARegionResource::collection($data)
+                    : QAAreaResource::collection($data);
         }
 
-        return $this->responseSuccess("Area display successfully.", $area);
+        return $this->responseSuccess(
+            __("messages.success_display", ["attribute" => $message_type]),
+            $data
+        );
     }
 }

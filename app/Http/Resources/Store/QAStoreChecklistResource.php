@@ -5,6 +5,7 @@ namespace App\Http\Resources\Store;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Section\QASectionResource;
+use App\Http\Resources\Checklist\QAChecklistResource;
 
 class QAStoreChecklistResource extends JsonResource
 {
@@ -18,18 +19,11 @@ class QAStoreChecklistResource extends JsonResource
         return [
             "id" => $this->id,
             "code" => $this->code,
-            "checklist" => $this->checklist->name ?? null,
+            "checklist" => new QAChecklistResource($this->checklist) ?? null,
             "sections" =>
-                QASectionResource::collection($this->sections) ?? null,
+                QASectionResource::collection($this->checklist->sections) ??
+                null,
             "weekly_record" => $this->weekly_record,
-            // "store_visit" => $this->store_visit,
-            // "expired" => $this->expired,
-            // "condemned" => $this->condemned,
-            // "store_duty_id" => $this->store_duty_id,
-            // "good_points" => $this->good_points,
-            // "notes" => $this->notes,
-            // "grade" => $this->grade,
-            // "status" => $this->status,
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,

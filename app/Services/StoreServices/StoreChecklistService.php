@@ -11,7 +11,7 @@ class StoreChecklistService
         $store_checklist = StoreChecklist::create([
             "store_id" => $data["store_id"],
             "checklist_id" => $data["checklist_id"],
-            "status" => "Pending",
+            "status" => "Active",
         ]);
 
         return [
@@ -31,9 +31,9 @@ class StoreChecklistService
         if ($store_checklist->isDirty(["store_id", "checklist_id"])) {
             $store_checklist->save();
             $message = "Store Checklist successfully updated";
+        } else {
+            $message = "No changes were made.";
         }
-
-        $message = "No changes were made.";
 
         return [
             "store_checklist" => $store_checklist,
@@ -47,9 +47,13 @@ class StoreChecklistService
 
         if (is_null($store_checklist->deleted_at)) {
             $store_checklist->delete();
+            $store_checklist->status = "Archived";
+            $store_checklist->save();
             $message = "Store Checklist successfully archived";
         } else {
             $store_checklist->restore();
+            $store_checklist->status = "Active";
+            $store_checklist->save();
             $message = "Store Checklist successfully restored";
         }
 

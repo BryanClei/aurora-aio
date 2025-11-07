@@ -25,8 +25,8 @@ class Region extends Model
         )->withTrashed();
     }
 
-    public function region()
+    public function area()
     {
-        return $this->hasMany(Area::class, "id", "region_id");
+        return $this->hasMany(Area::class, "region_id", "id");
     }
 }

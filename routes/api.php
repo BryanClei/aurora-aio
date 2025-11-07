@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Store\StoreChecklistController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 use App\Http\Controllers\Api\ScoreRating\ScoreRatingController;
 use App\Http\Controllers\Api\RegionAreaHead\RegionAreaHeadController;
+use App\Http\Controllers\Api\Report\Export\ExportStoreChecklistController;
 
 Route::post("login", [AuthController::class, "login"]);
 Route::get("patch_notes/public_display", [
@@ -148,4 +149,14 @@ Route::middleware(["auth:sanctum"])->group(function () {
         "approver_dashboard",
         ApproverDashboardController::class
     );
+
+    Route::get("export/region/area/store_grades", [
+        ExportStoreChecklistController::class,
+        "storeGradesExport",
+    ]);
+
+    Route::get("export/region/area/store_grades/per_week", [
+        ExportStoreChecklistController::class,
+        "storeAreaPerWeekExport",
+    ]);
 });

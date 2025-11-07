@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Region;
 use App\Models\Area;
 use App\Models\Region;
 use Illuminate\Http\Request;
-use App\Helpers\AuditTrailHelper;
 use App\Http\Controllers\Controller;
 use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\DisplayRequest;
@@ -67,15 +66,6 @@ class RegionController extends Controller
     public function store(RegionRequest $request)
     {
         $new_region = $this->regionService->createRegion($request->all());
-
-        AuditTrailHelper::activityLogs(
-            moduleType: "Masterlist",
-            moduleName: "Region",
-            action: "Create",
-            newData: $new_region["region"],
-            previousData: null,
-            remarks: "New region successfully created."
-        );
 
         return $this->responseCreated(
             "Region successfully created.",

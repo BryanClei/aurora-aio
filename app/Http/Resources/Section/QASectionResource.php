@@ -21,6 +21,7 @@ class QASectionResource extends JsonResource
             "title" => $this->title,
             "description" => $this->description,
             "order_index" => $this->order_index,
+            "category_id" => $this->category_id,
             "questions" => QAQuestionResource::collection($this->questions),
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,

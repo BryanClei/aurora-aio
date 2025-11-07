@@ -16,8 +16,13 @@ class ChecklistSnapshotHelper
      * @param array $gradeData - The calculated grade data
      * @return array
      */
-    public static function createSnapshot(array $data, array $gradeData): array
-    {
+    public static function createSnapshot(
+        array $data,
+        array $gradeData,
+        int $week,
+        int $month,
+        int $year
+    ): array {
         // Load the complete checklist with all relationships
         $checklist = Checklist::with([
             "sections.questions.options",
@@ -34,13 +39,18 @@ class ChecklistSnapshotHelper
         // Build the complete snapshot
         $snapshot = [
             "inspection_metadata" => [
+                "week" => $week,
+                "month" => $month,
+                "year" => $year,
                 "inspection_date" => now()->toISOString(),
                 "inspector" => [
                     "id" => $inspector->id,
                     "full_name" => trim(
                         $inspector->first_name . " " . $inspector->last_name
                     ),
-                    "email" => $inspector->email,
+                    "employee_id" => trim(
+                        $inspector->id_prefix . " " . $inspector->id_no
+                    ),
                 ],
                 "store" => [
                     "id" => $store->id,
@@ -107,6 +117,12 @@ class ChecklistSnapshotHelper
         foreach ($checklist->sections as $section) {
             $questionsData = [];
 
+            $section_name = null;
+
+            if ($section->category_id != null) {
+                $section_name = $section->category->name;
+            }
+
             foreach ($section->questions as $question) {
                 $response = $responsesByQuestion->get($question->id);
 
@@ -124,6 +140,8 @@ class ChecklistSnapshotHelper
 
             $sectionsData[] = [
                 "id" => $section->id,
+                "category_id" => $section->category_id ?? null,
+                "category_name" => $section_name,
                 "title" => $section->title,
                 "description" => $section->description,
                 "order_index" => $section->order_index,
@@ -245,7 +263,7 @@ class ChecklistSnapshotHelper
     {
         return json_encode(
             $snapshot,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
         );
     }
 

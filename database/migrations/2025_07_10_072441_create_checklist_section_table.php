@@ -16,6 +16,7 @@ return new class extends Migration {
                 ->foreignId("checklist_id")
                 ->constrained()
                 ->onDelete("cascade");
+            $table->integer("category_id")->nullable();
             $table
                 ->string("title")
                 ->nullable()

@@ -26,27 +26,23 @@ class StoreRequest extends FormRequest
             "name" => [
                 "required",
                 "string",
-                $this->route()->store
-                    ? "unique:stores,name," . $this->route()->store
-                    : "unique:stores,name",
-            ],
-            "area_id" => ["required", "exists:areas,id,deleted_at,NULL"],
-            "region_id" => [
-                "required",
-                "exists:regions,id,deleted_at,NULL",
                 Rule::unique("stores")
                     ->where(function ($query) {
-                        return $query->where("area_id", $this->area_id);
+                        return $query
+                            ->where("area_id", $this->area_id)
+                            ->where("region_id", $this->region_id);
                     })
-                    ->ignore($this->route()->store),
+                    ->ignore($this->route("store")),
             ],
+            "area_id" => ["required", "exists:areas,id,deleted_at,NULL"],
+            "region_id" => ["required", "exists:regions,id,deleted_at,NULL"],
         ];
     }
 
     public function messages()
     {
         return [
-            "region_id.unique" =>
+            "name.unique" =>
                 "The combination of region and area already exists.",
         ];
     }

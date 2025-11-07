@@ -11,6 +11,7 @@ use App\Http\Requests\QA\StoreRequest;
 use App\Services\QAService\QAServices;
 use App\Http\Requests\QADisplayRequest;
 use App\Http\Resources\Area\QAAreaResource;
+use App\Http\Resources\Store\QAStoreResource;
 use App\Http\Resources\Weekly\WeeklyQAResource;
 use App\Http\Resources\Weekly\WeeklyQAStoreResource;
 
@@ -32,8 +33,8 @@ class QAController extends Controller
         $month = $request->month;
         $year = $request->year;
 
-        $area = Area::with([
-            "store.store_checklist.weekly_record" => function ($q) use (
+        $store = Store::with([
+            "store_checklist.weekly_record" => function ($q) use (
                 $month,
                 $year
             ) {
@@ -41,20 +42,23 @@ class QAController extends Controller
                     ->when($year, fn($query) => $query->where("year", $year))
                     ->orderBy("week", "asc");
             },
+            "store_checklist.weekly_record.weekly_skipped",
         ])
-            ->whereHas("store")
+            ->whereHas("store_checklist", function ($query) {
+                $query->whereHas("checklist.sections");
+            })
             ->useFilters()
             ->dynamicPaginate();
 
         if (!$pagination) {
-            QAAreaResource::collection($area);
+            QAStoreResource::collection($store);
         } else {
-            $area = QAAreaResource::collection($area);
+            $store = QAStoreResource::collection($store);
         }
 
         return $this->responseSuccess(
             "Store checklist display successfully.",
-            $area
+            $store
         );
     }
 
@@ -64,11 +68,11 @@ class QAController extends Controller
         $month = $request->month;
         $year = $request->year;
         $week = $request->week;
-        $checklist_id = $request->checklist_id;
+        $store_checklist_id = $request->store_checklist_id;
 
         $area = Store::with([
-            "store_checklist" => function ($q) use ($checklist_id) {
-                $q->where("id", $checklist_id);
+            "store_checklist" => function ($q) use ($store_checklist_id) {
+                $q->where("id", $store_checklist_id);
             },
             "store_checklist.weekly_record" => function ($q) use (
                 $month,
@@ -108,6 +112,22 @@ class QAController extends Controller
 
         return $this->responseCreated(
             "Store checklist fill up successfully.",
+            $answer
+        );
+    }
+
+    public function update(StoreRequest $request, $id)
+    {
+        $user_id = Auth()->user()->id;
+
+        $answer = $this->qaServices->updateResponse($id, $request->all());
+
+        if (is_string($answer)) {
+            return $this->responseInvalid($answer);
+        }
+
+        return $this->responseSuccess(
+            "Store checklist updated successfully.",
             $answer
         );
     }

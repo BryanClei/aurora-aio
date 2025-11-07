@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Region;
 use App\Models\AutoSkipped;
 use Illuminate\Support\Str;
+use App\Helpers\AuditTrailHelper;
 use Illuminate\Http\UploadedFile;
 use App\Models\StoreChecklistDuty;
 use Illuminate\Support\Facades\Auth;
@@ -25,29 +26,38 @@ class QAServices
     {
         $isStoreVisit = ($data["store_visit"] ?? 0) == 1;
 
+        $today = Carbon::today();
+        $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
+
+        $week = $fourWeekInfo["week"];
+        // $week = 3;
+        $month = $fourWeekInfo["month"];
+        $year = $fourWeekInfo["year"];
+
+        // 🔥 STEP 1: Process all attachments FIRST
+        $data["responses"] = self::processResponseAttachments(
+            $data["responses"] ?? [],
+            $data["code"] ?? "checklist",
+            $week,
+            $month,
+            $year
+        );
+
+        // STEP 2: Calculate grade with processed responses
         $gradeData = GradeCalculatorHelper::calculate(
             $data["checklist_id"],
             $data["responses"],
             $isStoreVisit
         );
 
-        // 🔥 CREATE COMPLETE AUDIT TRAIL SNAPSHOT
+        // 🔥 STEP 3: CREATE COMPLETE AUDIT TRAIL SNAPSHOT
         $auditSnapshot = ChecklistSnapshotHelper::createSnapshot(
             $data,
-            $gradeData
+            $gradeData,
+            $week,
+            $month,
+            $year
         );
-        $auditSnapshotJson = ChecklistSnapshotHelper::encodeSnapshot(
-            $auditSnapshot
-        );
-
-        // return $data["answer"];
-
-        $today = Carbon::today();
-        $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
-
-        $week = $fourWeekInfo["week"];
-        $month = $fourWeekInfo["month"];
-        $year = $fourWeekInfo["year"];
 
         // Check if this qualifies for auto-grade next week
         $autoGradeApplied = false;
@@ -69,7 +79,8 @@ class QAServices
             "year" => $year,
             "weekly_grade" => $finalGrade,
             "graded_by" => Auth::id(),
-            "store_visit" => $data["store_visit"],
+            "store_visit" =>
+                $data["store_visit"] == 0 ? null : $data["store_visit"],
             "expired" => $data["expired"],
             "condemned" => $data["condemned"],
         ]);
@@ -106,34 +117,9 @@ class QAServices
                         ]);
                     }
 
-                    $attachmentPath = null;
-
-                    if (isset($originalResponse["attachment"])) {
-                        $file = $originalResponse["attachment"];
-
-                        if ($file instanceof UploadedFile) {
-                            $filename = sprintf(
-                                "%s_Q%s_%s.%s",
-                                $data["code"] ?? "checklist",
-                                $question["question_id"],
-                                $week . "" . $month . "" . $year,
-                                $file->getClientOriginalExtension()
-                            );
-
-                            // 🔹 OPTION 1: LOCAL (uses Laravel Storage)
-                            // Uncomment when working locally:
-                            $attachmentPath = $file->storeAs(
-                                "checklist_attachments",
-                                $filename,
-                                "public"
-                            );
-
-                            // 🔹 OPTION 2: PRODUCTION (direct upload to cPanel public_html)
-                            // Uncomment when deployed to cPanel:
-                            // $file->move(public_path("attachment"), $filename);
-                            // $attachmentPath = "attachment/" . $filename;
-                        }
-                    }
+                    // Attachment is already processed - just extract the path
+                    $attachmentPath =
+                        $originalResponse["attachment"]["file_path"] ?? null;
 
                     StoreChecklistResponse::create([
                         "response_id" => $record->id,
@@ -144,6 +130,7 @@ class QAServices
                         "section_order_index" =>
                             $section["section_order_index"],
                         "question_id" => $question["question_id"],
+                        "question_type" => $question["question_type"],
                         "question_text" => $question["question_text"],
                         "question_order_index" =>
                             $question["question_order_index"],
@@ -181,6 +168,27 @@ class QAServices
             $autoGradeApplied = true;
         }
 
+        // 🔥 LOG AUDIT TRAIL - RIGHT BEFORE RETURN
+        AuditTrailHelper::activityLogs(
+            moduleType: "QA Dashboard",
+            moduleName: "Weekly Record",
+            moduleId: $record->id,
+            action: "Submit",
+            newData: $auditSnapshot,
+            previousData: null,
+            remarks: sprintf(
+                "Store: %s (ID: %s) | Week %s, Month %s, Year %s | Grade: %s | Store Visit: %s",
+                $auditSnapshot["inspection_metadata"]["store"]["name"] ??
+                    "Unknown",
+                $data["store_id"],
+                $week,
+                $month,
+                $year,
+                $finalGrade,
+                $isStoreVisit ? "Yes" : "No"
+            )
+        );
+
         return [
             "grade_data" => $gradeData,
             "weekly_record" => $record,
@@ -192,18 +200,76 @@ class QAServices
         ];
     }
 
-    /**
-     * Check if we should auto-create the next week with 100% grade
-     * This happens when submitting the second-to-last week (e.g., week 3 in a 4-week month)
-     *
-     * @param int $storeChecklistId
-     * @param int $currentWeek
-     * @param int $month
-     * @param int $year
-     * @param float $currentGrade
-     * @param array $currentData
-     * @return bool
-     */
+    private static function processResponseAttachments(
+        array $responses,
+        string $code,
+        int $week,
+        int $month,
+        int $year
+    ): array {
+        $processedResponses = [];
+
+        foreach ($responses as $response) {
+            // Check if attachment exists and is an UploadedFile
+            if (
+                isset($response["attachment"]) &&
+                $response["attachment"] instanceof UploadedFile
+            ) {
+                try {
+                    $file = $response["attachment"];
+
+                    $filename = sprintf(
+                        "%s_Q%s_%s.%s",
+                        $code,
+                        $response["question_id"],
+                        $week . $month . $year,
+                        $file->getClientOriginalExtension()
+                    );
+
+                    // 🔹 OPTION 1: LOCAL (uses Laravel Storage)
+                    // Uncomment when working locally:
+                    $attachmentPath = $file->storeAs(
+                        "checklist_attachments",
+                        $filename,
+                        "public"
+                    );
+
+                    // 🔹 OPTION 2: PRODUCTION (direct upload to cPanel public_html)
+                    // Uncomment when deployed to cPanel:
+                    // $file->move(public_path("attachment"), $filename);
+                    // $attachmentPath = "attachment/" . $filename;
+
+                    // Replace UploadedFile with structured file info
+                    $response["attachment"] = [
+                        "file_name" => $filename,
+                        "file_path" => $attachmentPath,
+                        "file_url" => asset("storage/" . $attachmentPath),
+                        "original_name" => $file->getClientOriginalName(),
+                        "mime_type" => $file->getMimeType(),
+                        "size" => $file->getSize(),
+                    ];
+                } catch (\Exception $e) {
+                    // Log error and set attachment to null
+                    \Log::error(
+                        "File upload failed for question {$response["question_id"]}: " .
+                            $e->getMessage()
+                    );
+                    $response["attachment"] = null;
+                }
+            } elseif (
+                isset($response["attachment"]) &&
+                empty($response["attachment"])
+            ) {
+                // Clean up empty attachments
+                $response["attachment"] = null;
+            }
+
+            $processedResponses[] = $response;
+        }
+
+        return $processedResponses;
+    }
+
     private static function shouldAutoCreateNextWeek(
         int $storeChecklistId,
         int $currentWeek,
@@ -297,16 +363,6 @@ class QAServices
         return true;
     }
 
-    /**
-     * Create an auto-graded weekly record with 100% grade
-     *
-     * @param int $storeChecklistId
-     * @param int $week
-     * @param int $month
-     * @param int $year
-     * @param \Illuminate\Support\Collection $storeDuties
-     * @return StoreChecklistWeeklyRecord
-     */
     private static function createAutoGradedWeek(
         int $storeChecklistId,
         int $week,
@@ -321,7 +377,8 @@ class QAServices
             "month" => $month,
             "year" => $year,
             "weekly_grade" => 100,
-            "graded_source" => "auto",
+            "is_auto_grade" => true,
+            "grade_source" => "auto",
             "graded_by" => Auth::id(),
             "store_visit" => null,
             "expired" => null,
@@ -458,16 +515,12 @@ class QAServices
     {
         $today = Carbon::today();
         $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
+        $region_id = $data["region_id"] ?? null;
 
-        // $week = $fourWeekInfo["week"];
-        // $month = $fourWeekInfo["month"];
-        // $year = $fourWeekInfo["year"];
-
-        $week = 4;
-        $month = 9;
+        $week = $fourWeekInfo["week"];
+        // $week = 3; // For testing purposes
+        $month = $fourWeekInfo["month"];
         $year = $fourWeekInfo["year"];
-
-        $region_id = $data["region_id"];
 
         $region = Region::find($region_id);
 

@@ -10,6 +10,8 @@ class StoreChecklistWeeklyRecord extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = "store_checklist_weekly_records";
+
     protected $fillable = [
         "store_checklist_id",
         "week",
@@ -63,6 +65,14 @@ class StoreChecklistWeeklyRecord extends Model
     public function users()
     {
         return $this->belongsTo(User::class, "graded_by", "id");
+    }
+
+    public function audit_trail()
+    {
+        return $this->hasMany(AuditTrail::class, "module_id", "id")->where(
+            "module_name",
+            "Weekly Record"
+        );
     }
 
     // Get week date range

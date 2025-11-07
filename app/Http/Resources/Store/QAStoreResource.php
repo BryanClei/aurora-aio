@@ -18,9 +18,17 @@ class QAStoreResource extends JsonResource
             "id" => $this->id,
             "code" => $this->code,
             "name" => $this->name,
-            "checklist" => QAStoreChecklistResource::collection(
+            "store_checklist" => QAStoreChecklistResource::collection(
                 $this->store_checklist
             ),
+            "region" => [
+                "id" => optional($this->regions)->id,
+                "name" => optional($this->regions)->name,
+            ],
+            "area" => [
+                "id" => optional($this->areas)->id,
+                "name" => optional($this->areas)->name,
+            ],
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,

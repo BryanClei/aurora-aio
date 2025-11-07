@@ -10,6 +10,7 @@ class AuditTrailHelper
     public static function activityLogs(
         $moduleType,
         $moduleName,
+        $moduleId,
         $action,
         $newData = null,
         $previousData = null,
@@ -21,6 +22,7 @@ class AuditTrailHelper
         AuditTrail::create([
             "module_type" => $moduleType,
             "module_name" => $moduleName,
+            "module_id" => $moduleId,
             "action" => $action,
             "action_by" => $user->id,
             "action_by_name" => $user->by,

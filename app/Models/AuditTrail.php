@@ -10,7 +10,7 @@ class AuditTrail extends Model
 {
     use HasFactory, Filterable;
 
-    protected $casts = ["new_data", "previous_data"];
+    protected $casts = ["new_data" => "json", "previous_data"];
 
     protected $fillable = [
         "module_type",

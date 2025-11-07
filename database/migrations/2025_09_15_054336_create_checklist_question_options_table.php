@@ -19,7 +19,7 @@ return new class extends Migration {
                 ->constrained("checklist_questions")
                 ->onDelete("cascade");
             $table->string("option_text", 500);
-            // $table->unsignedBigInteger("score_rating_id")->nullable();
+            $table->unsignedBigInteger("score_rating_id")->nullable();
             $table->integer("order_index")->default(0);
             $table->timestamps();
             $table->softDeletes();

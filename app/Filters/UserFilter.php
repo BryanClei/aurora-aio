@@ -29,4 +29,9 @@ class UserFilter extends QueryFilters
             });
         }
     }
+
+    public function role_id($value)
+    {
+        $this->builder->where("role_id", $value);
+    }
 }

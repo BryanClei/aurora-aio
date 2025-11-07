@@ -16,4 +16,5 @@ return [
         "Region head for this region is not set. Please contact support.",
     "region_head_not_found" =>
         "Region head for this region is not found! Please contact support.",
+    "success_display" => ":attribute display successfully.",
 ];

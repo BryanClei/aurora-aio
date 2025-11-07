@@ -4,6 +4,7 @@ namespace App\Http\Resources\Weekly;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Audit\SurveyAuditTrailResource;
 
 class WeeklyRecordResource extends JsonResource
 {
@@ -30,8 +31,11 @@ class WeeklyRecordResource extends JsonResource
             "create_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,
-            "weekly_response" => WeeklyQAResponseResource::collection(
-                $this->weekly_response
+            // "weekly_response" => WeeklyQAResponseResource::collection(
+            //     $this->weekly_response
+            // ),
+            "audit_trail" => SurveyAuditTrailResource::collection(
+                $this->audit_trail
             ),
         ];
     }

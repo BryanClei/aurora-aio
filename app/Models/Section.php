@@ -18,6 +18,7 @@ class Section extends Model
 
     protected $fillable = [
         "checklist_id",
+        "category_id",
         "title",
         "percentage",
         "order_index",
@@ -31,5 +32,10 @@ class Section extends Model
     public function questions()
     {
         return $this->hasMany(Question::class, "section_id", "id");
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, "category_id", "id");
     }
 }

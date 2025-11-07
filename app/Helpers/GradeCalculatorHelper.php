@@ -43,9 +43,9 @@ class GradeCalculatorHelper
         }
 
         // If store visit is true, set grade to 0
-        if ($isStoreVisit) {
-            $totalEarnedScore = 0;
-        }
+        // if ($isStoreVisit) {
+        //     $totalEarnedScore = 0;
+        // }
 
         return [
             "grade" => round($totalEarnedScore, 2),
@@ -71,6 +71,7 @@ class GradeCalculatorHelper
                 "section_id" => $section->id,
                 "section_title" => $section->title,
                 "section_order_index" => $section->order_index,
+                "section_category_id" => $section->category_id,
                 "max_points" => round($pointsPerSection, 2),
                 "earned_points" => 0,
                 "percentage" => 0,
@@ -99,6 +100,7 @@ class GradeCalculatorHelper
             "section_id" => $section->id,
             "section_title" => $section->title,
             "section_order_index" => $section->order_index,
+            "section_category_id" => $section->category_id,
             "max_points" => round($pointsPerSection, 2),
             "earned_points" => round($sectionScore, 2),
             "percentage" => round($sectionScore, 2),
@@ -215,6 +217,9 @@ class GradeCalculatorHelper
             ->map(function ($duty) {
                 return [
                     "id" => $duty->id,
+                    "employee_id" => trim(
+                        $duty->id_prefix . "-" . $duty->id_no
+                    ),
                     "first_name" => $duty->first_name,
                     "last_name" => $duty->last_name,
                     "full_name" => trim(

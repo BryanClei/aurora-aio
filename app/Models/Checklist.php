@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Category;
 use App\Models\Checklist;
 use App\Filters\ChecklistFilter;
 use Essa\APIToolKit\Filters\Filterable;

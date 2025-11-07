@@ -4,6 +4,7 @@ namespace App\Services\RegionServices;
 
 use App\Models\Area;
 use App\Models\Region;
+use App\Helpers\AuditTrailHelper;
 
 class RegionService
 {
@@ -13,6 +14,16 @@ class RegionService
             "name" => $data["name"],
             "region_head_id" => $data["region_head_id"],
         ]);
+
+        AuditTrailHelper::activityLogs(
+            moduleType: "Masterlist",
+            moduleName: "Region",
+            moduleId: $new_region->id,
+            action: "Create",
+            newData: $new_region,
+            previousData: null,
+            remarks: "New region successfully created."
+        );
 
         return ["region" => $new_region];
     }
