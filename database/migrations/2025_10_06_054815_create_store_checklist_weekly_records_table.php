@@ -27,11 +27,13 @@ return new class extends Migration {
             $table->enum("grade_source", ["auto", "manual"])->default("auto");
 
             $table->unsignedBigInteger("graded_by")->nullable();
+            $table->string("status");
             $table->text("grade_notes")->nullable();
 
             $table->integer("store_visit")->nullable();
             $table->integer("expired")->nullable();
             $table->integer("condemned")->nullable();
+            $table->longText("for_approval_reason")->nullable();
 
             $table->timestamps();
             $table->softDeletes();

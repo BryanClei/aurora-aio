@@ -25,6 +25,7 @@ class WeeklyRecordResource extends JsonResource
             "is_auto_grade" => $this->is_auto_grade,
             "grade_source" => $this->grade_source,
             "graded_by" => $this->users,
+            "status" => $this->status,
             "grade_notes" => $this->notes,
             "store_visit" => $this->store_visit,
             "condemned" => $this->condemned,
@@ -37,6 +38,7 @@ class WeeklyRecordResource extends JsonResource
             "audit_trail" => SurveyAuditTrailResource::collection(
                 $this->audit_trail
             ),
+            "weekly_skipped" => $this->weekly_skipped,
         ];
     }
 }

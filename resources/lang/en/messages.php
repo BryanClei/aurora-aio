@@ -17,4 +17,7 @@ return [
     "region_head_not_found" =>
         "Region head for this region is not found! Please contact support.",
     "success_display" => ":attribute display successfully.",
+    "once_per_day" =>
+        "Already submitted for today. You can only submit once per day.",
+    "overdue_only" => "Only overdue survey can be sent for approval.",
 ];

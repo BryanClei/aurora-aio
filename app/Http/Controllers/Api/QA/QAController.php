@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReasonRequest;
 use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\QA\StoreRequest;
 use App\Services\QAService\QAServices;
@@ -84,6 +85,7 @@ class QAController extends Controller
                     ->when($week, fn($query) => $query->where("week", $week))
                     ->orderBy("week", "asc");
             },
+            "store_checklist.weekly_record.weekly_skipped",
             "store_checklist.weekly_record.users",
             "store_checklist.weekly_record.weekly_response.staff_on_duty",
         ])->find($id);
@@ -106,9 +108,15 @@ class QAController extends Controller
 
     public function store(StoreRequest $request)
     {
+        $request->all();
+
         $user_id = Auth()->user()->id;
 
         $answer = $this->qaServices->storeResponse($request->all());
+
+        if (!$answer["success"]) {
+            return $this->responseUnprocessable($answer["message"]);
+        }
 
         return $this->responseCreated(
             "Store checklist fill up successfully.",
@@ -123,7 +131,7 @@ class QAController extends Controller
         $answer = $this->qaServices->updateResponse($id, $request->all());
 
         if (is_string($answer)) {
-            return $this->responseInvalid($answer);
+            return $this->responseUnprocessable($answer);
         }
 
         return $this->responseSuccess(
@@ -154,11 +162,27 @@ class QAController extends Controller
         $answer = $this->qaServices->autoSkip($request->all());
 
         if (is_string($answer)) {
-            return $this->responseInvalid($answer);
+            return $this->responseUnprocessable($answer);
         }
 
         return $this->responseCreated(
             "Store checklist skipped successfully.",
+            $answer
+        );
+    }
+
+    public function forApproval(ReasonRequest $request, $id)
+    {
+        $user_id = Auth()->user()->id;
+
+        $answer = $this->qaServices->forApproval($id, $request->all());
+
+        if (is_string($answer)) {
+            return $this->responseUnprocessable($answer);
+        }
+
+        return $this->responseSuccess(
+            "Store checklist submitted for approval successfully.",
             $answer
         );
     }

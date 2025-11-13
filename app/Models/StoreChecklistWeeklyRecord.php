@@ -21,10 +21,12 @@ class StoreChecklistWeeklyRecord extends Model
         "is_auto_grade",
         "grade_source",
         "graded_by",
+        "status",
         "grade_notes",
         "store_visit",
         "expired",
         "condemned",
+        "for_approval_reason",
     ];
 
     protected $casts = [

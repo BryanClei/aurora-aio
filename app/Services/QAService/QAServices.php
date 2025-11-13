@@ -24,12 +24,25 @@ class QAServices
 {
     public static function storeResponse(array $data)
     {
+        $canSubmit = FourWeekCalendarHelper::canSubmitToday(
+            $data["store_checklist_id"],
+            Auth::id()
+        );
+
+        if (!$canSubmit["can_submit"]) {
+            return [
+                "success" => false,
+                "message" => $canSubmit["reason"],
+                "error" => true,
+            ];
+        }
+        // Use the automatically determined next available week
+        $week = $canSubmit["next_available_week"];
+
         $isStoreVisit = ($data["store_visit"] ?? 0) == 1;
 
         $today = Carbon::today();
         $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
-
-        $week = $fourWeekInfo["week"];
         // $week = 3;
         $month = $fourWeekInfo["month"];
         $year = $fourWeekInfo["year"];
@@ -79,6 +92,7 @@ class QAServices
             "year" => $year,
             "weekly_grade" => $finalGrade,
             "graded_by" => Auth::id(),
+            "status" => "Completed",
             "store_visit" =>
                 $data["store_visit"] == 0 ? null : $data["store_visit"],
             "expired" => $data["expired"],
@@ -197,6 +211,7 @@ class QAServices
             "auto_grade_applied" => $autoGradeApplied,
             "auto_created_record" => $autoCreatedRecord,
             "final_grade" => $finalGrade,
+            "success" => true,
         ];
     }
 
@@ -278,19 +293,11 @@ class QAServices
         float $currentGrade,
         array $currentData
     ): bool {
-        // Get total weeks in this month
-        $allWeeks = FourWeekCalendarHelper::getAllWeeksInMonth($month, $year);
-        $totalWeeks = count($allWeeks);
+        // Always 4 weeks per month in new system
+        $totalWeeks = 4;
 
-        // Month must have at least 4 weeks
-        if ($totalWeeks < 4) {
-            return false;
-        }
-
-        // Only apply when submitting the second-to-last week
-        // For 4 weeks: trigger on week 3
-        // For 5 weeks: trigger on week 4
-        if ($currentWeek !== $totalWeeks - 1) {
+        // Only apply when submitting week 3 (second-to-last week)
+        if ($currentWeek !== 3) {
             return false;
         }
 
@@ -308,12 +315,12 @@ class QAServices
             return false;
         }
 
-        // Check if next week already exists
+        // Check if week 4 already exists
         $nextWeekExists = StoreChecklistWeeklyRecord::where(
             "store_checklist_id",
             $storeChecklistId
         )
-            ->where("week", $currentWeek + 1)
+            ->where("week", 4)
             ->where("month", $month)
             ->where("year", $year)
             ->exists();
@@ -322,7 +329,7 @@ class QAServices
             return false;
         }
 
-        // Get all previous weeks (from week 1 to current week - 1)
+        // Check all previous weeks (week 1 and week 2)
         if ($currentWeek > 1) {
             $previousWeekNumbers = range(1, $currentWeek - 1);
 
@@ -359,7 +366,7 @@ class QAServices
             }
         }
 
-        // All conditions met: auto-create next week
+        // All conditions met: auto-create week 4
         return true;
     }
 
@@ -370,6 +377,13 @@ class QAServices
         int $year,
         $storeDuties
     ): StoreChecklistWeeklyRecord {
+        // Ensure week is valid (1-4)
+        if ($week < 1 || $week > 4) {
+            throw new \Exception(
+                "Invalid week number. Must be between 1 and 4."
+            );
+        }
+
         // Create the weekly record with 100% grade
         $record = StoreChecklistWeeklyRecord::create([
             "store_checklist_id" => $storeChecklistId,
@@ -380,6 +394,7 @@ class QAServices
             "is_auto_grade" => true,
             "grade_source" => "auto",
             "graded_by" => Auth::id(),
+            "status" => "Completed",
             "store_visit" => null,
             "expired" => null,
             "condemned" => null,
@@ -518,9 +533,18 @@ class QAServices
         $region_id = $data["region_id"] ?? null;
 
         $week = $fourWeekInfo["week"];
-        // $week = 3; // For testing purposes
         $month = $fourWeekInfo["month"];
         $year = $fourWeekInfo["year"];
+
+        // Validate week is between 1-4
+        if ($week < 1 || $week > 4) {
+            return "Invalid week number for current date.";
+        }
+
+        // Check if within submission period
+        if (!$fourWeekInfo["is_within_submission_period"]) {
+            return "Cannot skip - submission period has ended (4 days before month end).";
+        }
 
         $region = Region::find($region_id);
 
@@ -534,14 +558,30 @@ class QAServices
             return "No region approver found! Please contact support.";
         }
 
+        // Check if already exists for this week
+        $existingRecord = StoreChecklistWeeklyRecord::where(
+            "store_checklist_id",
+            $data["store_checklist_id"]
+        )
+            ->where("week", $week)
+            ->where("month", $month)
+            ->where("year", $year)
+            ->first();
+
+        if ($existingRecord) {
+            return "A record already exists for Week {$week} of this month.";
+        }
+
         $record = StoreChecklistWeeklyRecord::create([
             "store_checklist_id" => $data["store_checklist_id"],
             "week" => $week,
             "month" => $month,
             "year" => $year,
             "weekly_grade" => 0,
+            "is_auto_grade" => true,
             "grade_source" => "auto",
             "graded_by" => Auth::id(),
+            "status" => "Overdue",
         ]);
 
         $skipped_record = AutoSkipped::create([
@@ -557,6 +597,184 @@ class QAServices
         return [
             "weekly_record" => $record,
             "auto_skipped" => $skipped_record,
+            "week_info" => $fourWeekInfo,
         ];
+    }
+
+    public static function updateResponse($id, array $data)
+    {
+        $weeklyRecord = StoreChecklistWeeklyRecord::with(
+            "weekly_response"
+        )->findOrFail($id);
+
+        if (!$weeklyRecord) {
+            return __("messages.id_not_found");
+        }
+
+        $isStoreVisit = ($data["store_visit"] ?? 0) == 1;
+
+        $week = $weeklyRecord->week;
+        $month = $weeklyRecord->month;
+        $year = $weeklyRecord->year;
+
+        $data["responses"] = self::processResponseAttachments(
+            $data["responses"] ?? [],
+            $data["code"] ?? "checklist",
+            $week,
+            $month,
+            $year
+        );
+
+        $gradeData = GradeCalculatorHelper::calculate(
+            $data["checklist_id"],
+            $data["responses"],
+            $isStoreVisit
+        );
+
+        if (is_string($gradeData)) {
+            $gradeData = json_decode($gradeData, true);
+        }
+
+        $auditSnapshot = ChecklistSnapshotHelper::createSnapshot(
+            $data,
+            $gradeData,
+            $week,
+            $month,
+            $year
+        );
+
+        $previousSnapshot = $weeklyRecord->snapshot
+            ? ChecklistSnapshotHelper::decodeSnapshot($weeklyRecord->snapshot)
+            : null;
+
+        $finalGrade = $gradeData["grade"] ?? 0;
+
+        $weeklyRecord->update([
+            "weekly_grade" => $finalGrade,
+            "graded_by" => Auth::id(),
+            "store_visit" =>
+                $data["store_visit"] == 0 ? null : $data["store_visit"],
+            "expired" => $data["expired"] ?? $weeklyRecord->expired,
+            "condemned" => $data["condemned"] ?? $weeklyRecord->condemned,
+            "status" => "Completed",
+        ]);
+
+        // STEP 5: Get store duties
+        $storeDuties = GradeCalculatorHelper::getStoreDuties(
+            $data["store_duty_id"]
+        );
+
+        $storeDutyRecord = StoreChecklistDuty::create([
+            "store_checklist_weekly_record_id" => $weeklyRecord->id,
+            "store_checklist_id" => $data["store_checklist_id"],
+            "staff_id" => json_encode($storeDuties->pluck("id")->toArray()),
+            "staff_name" => json_encode(
+                $storeDuties->pluck("full_name")->toArray()
+            ),
+        ]);
+
+        foreach ($gradeData["breakdown"] as $section) {
+            foreach ($section["questions"] as $question) {
+                $originalResponse = collect($data["responses"])->firstWhere(
+                    "question_id",
+                    $question["question_id"]
+                );
+
+                if ($originalResponse) {
+                    $answerText = null;
+                    $selectedOptions = null;
+
+                    if ($originalResponse["question_type"] === "paragraph") {
+                        $answerText = $originalResponse["answer"];
+                    } elseif (is_array($originalResponse["answer"])) {
+                        $selectedOptions = json_encode(
+                            $originalResponse["answer"]
+                        );
+                    } else {
+                        $selectedOptions = json_encode([
+                            $originalResponse["answer"],
+                        ]);
+                    }
+
+                    // Attachment is already processed - just extract the path
+                    $attachmentPath =
+                        $originalResponse["attachment"]["file_path"] ?? null;
+
+                    StoreChecklistResponse::create([
+                        "response_id" => $weeklyRecord->id,
+                        "weekly_record_id" => $weeklyRecord->id,
+                        "section_id" => $section["section_id"],
+                        "section_title" => $section["section_title"],
+                        "section_score" => $section["earned_points"],
+                        "section_order_index" =>
+                            $section["section_order_index"],
+                        "question_id" => $question["question_id"],
+                        "question_type" => $question["question_type"],
+                        "question_text" => $question["question_text"],
+                        "question_order_index" =>
+                            $question["question_order_index"],
+                        "answer_text" => $answerText,
+                        "selected_options" => $selectedOptions,
+                        "store_duty_id" => $storeDutyRecord->id,
+                        "good_points" => $data["good_points"] ?? null,
+                        "notes" => $data["notes"] ?? null,
+                        "score" => $question["earned_points"],
+                        "remarks" => $question["remarks"],
+                        "attachment" => $attachmentPath,
+                    ]);
+                }
+            }
+        }
+
+        // 🔥 LOG AUDIT TRAIL - Same as storeResponse
+        AuditTrailHelper::activityLogs(
+            moduleType: "QA Dashboard",
+            moduleName: "Weekly Record",
+            moduleId: $weeklyRecord->id,
+            action: "Update",
+            newData: $auditSnapshot,
+            previousData: $previousSnapshot,
+            remarks: sprintf(
+                "Updated Overdue Record | Store: %s (ID: %s) | Week %s, Month %s, Year %s | Grade: %s → %s | Store Visit: %s",
+                $auditSnapshot["inspection_metadata"]["store"]["name"] ??
+                    "Unknown",
+                $data["store_id"] ?? $weeklyRecord->store_checklist->store_id,
+                $week,
+                $month,
+                $year,
+                $previousSnapshot["grade_summary"]["total_grade"] ?? "N/A",
+                $finalGrade,
+                $isStoreVisit ? "Yes" : "No"
+            )
+        );
+
+        // Return data in the same format as storeResponse
+        return [
+            "grade_data" => $gradeData,
+            "weekly_record" => $weeklyRecord->fresh(),
+            "store_duties" => $storeDuties,
+            "final_grade" => $finalGrade,
+            "updated" => true,
+        ];
+    }
+
+    public function forApproval($id, $reason)
+    {
+        $weekly_record = StoreChecklistWeeklyRecord::find($id);
+
+        if (!$weekly_record) {
+            return __("messages.id_not_found");
+        }
+
+        if ($weekly_record->status !== "Overdue") {
+            return __("messages.overdue_only");
+        }
+
+        $weekly_record->update([
+            "status" => "For Approval",
+            "for_approval_reason" => $reason,
+        ]);
+
+        return $weekly_record;
     }
 }

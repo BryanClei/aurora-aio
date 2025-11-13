@@ -8,195 +8,318 @@ use App\Models\StoreChecklistWeeklyRecord;
 class FourWeekCalendarHelper
 {
     /**
-     * Get week information based on Monday-start weeks
-     * Each week belongs to the month of its Monday
-     * Returns week number (1-5), month, and year
+     * Get the current week information based on 4-week calendar system
      *
-     * @param Carbon|null $date
+     * @param Carbon $date
      * @return array
      */
-    public static function getMonthBasedFourWeek(?Carbon $date = null): array
+    public static function getMonthBasedFourWeek(Carbon $date): array
     {
-        $date = $date ?? Carbon::today();
-
-        // Get the Monday of the current week
-        $monday = $date->copy()->startOfWeek(Carbon::MONDAY);
-
-        // The week belongs to the month of its Monday
-        $weekMonth = $monday->month;
-        $weekYear = $monday->year;
-
-        // Get all Mondays in this month
-        $firstDayOfMonth = Carbon::create($weekYear, $weekMonth, 1);
-        $lastDayOfMonth = $firstDayOfMonth->copy()->endOfMonth();
-
-        // Find the first Monday of the month (or the Monday before if month doesn't start on Monday)
-        $firstMonday = $firstDayOfMonth->copy()->startOfWeek(Carbon::MONDAY);
-
-        // Count which Monday this is (1-5)
-        $weekNumber = 0;
-        $currentMonday = $firstMonday->copy();
-
-        while ($currentMonday->lte($monday)) {
-            // Only count Mondays that belong to this month
-            if ($currentMonday->month === $weekMonth) {
-                $weekNumber++;
-            }
-            $currentMonday->addWeek();
-        }
-
-        // Calculate week boundaries (Monday to Sunday)
-        $weekStart = $monday->copy();
-        $weekEnd = $monday->copy()->endOfWeek(Carbon::SUNDAY);
-
-        return [
-            "week" => $weekNumber, // 1-5
-            "month" => $weekMonth, // 1-12
-            "year" => $weekYear, // e.g., 2025
-            "week_start" => $weekStart->format("Y-m-d"),
-            "week_end" => $weekEnd->format("Y-m-d"),
-            "day_of_week" => $date->dayOfWeek, // 0 (Sunday) - 6 (Saturday)
-            "is_monday" => $date->isMonday(),
-        ];
-    }
-
-    /**
-     * Get all weeks for a given month and year
-     * Each week starts on Monday and belongs to the month of its Monday
-     *
-     * @param int $month
-     * @param int $year
-     * @return array
-     */
-    public static function getAllWeeksInMonth(int $month, int $year): array
-    {
-        $weeks = [];
-        $firstDayOfMonth = Carbon::create($year, $month, 1);
-        $lastDayOfMonth = $firstDayOfMonth->copy()->endOfMonth();
-
-        // Start from the first Monday in or before the month
-        $currentMonday = $firstDayOfMonth->copy()->startOfWeek(Carbon::MONDAY);
-
-        $weekNumber = 1;
-
-        // Loop through all Mondays until we're past the month
-        while (
-            $currentMonday->month === $month ||
-            $currentMonday->lte($lastDayOfMonth)
-        ) {
-            // Only include weeks whose Monday is in this month
-            if ($currentMonday->month === $month) {
-                $weekEnd = $currentMonday->copy()->endOfWeek(Carbon::SUNDAY);
-
-                $weeks[] = [
-                    "week" => $weekNumber,
-                    "start_date" => $currentMonday->format("Y-m-d"),
-                    "end_date" => $weekEnd->format("Y-m-d"),
-                    "start_day" => $currentMonday->day,
-                    "end_day" => $weekEnd->day,
-                    "end_month" => $weekEnd->month, // May spill into next month
-                ];
-
-                $weekNumber++;
-            }
-
-            $currentMonday->addWeek();
-
-            // Safety check: stop after 6 weeks (shouldn't happen, but prevents infinite loops)
-            if ($weekNumber > 6) {
-                break;
-            }
-        }
-
-        return $weeks;
-    }
-
-    /**
-     * Check if a checklist already exists for a given week/month/year
-     *
-     * @param int $week
-     * @param int $month
-     * @param int $year
-     * @param int|null $storeChecklistId Optional: check for specific store
-     * @return bool
-     */
-    public static function monthlyWeekChecker(
-        int $week,
-        int $month,
-        int $year,
-        ?int $storeChecklistId = null
-    ): bool {
-        $query = StoreChecklistWeeklyRecord::where("week", $week)
-            ->where("month", $month)
-            ->where("year", $year);
-
-        if ($storeChecklistId !== null) {
-            $query->where("store_checklist_id", $storeChecklistId);
-        }
-
-        return $query->exists();
-    }
-
-    /**
-     * Get the week info for a specific date range
-     * Useful for validation and display
-     *
-     * @param string $startDate Y-m-d format
-     * @param string $endDate Y-m-d format
-     * @return array
-     */
-    public static function getWeekInfoForDateRange(
-        string $startDate,
-        string $endDate
-    ): array {
-        $start = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-
-        // Verify it's a valid Monday-Sunday week
-        $isValidWeek =
-            $start->isMonday() &&
-            $end->isSunday() &&
-            $start->diffInDays($end) === 6;
-
-        return [
-            "is_valid_week" => $isValidWeek,
-            "week_info" => self::getMonthBasedFourWeek($start),
-            "days_in_range" => $start->diffInDays($end) + 1,
-        ];
-    }
-
-    /**
-     * OLD METHOD - Kept for backward compatibility reference
-     * Consider migrating existing data if you switch systems
-     */
-    public static function getMonthBasedFourWeekOLD(?Carbon $date = null): array
-    {
-        $date = $date ?? Carbon::today();
-        $dayOfMonth = $date->day;
         $month = $date->month;
         $year = $date->year;
+        $dayOfMonth = $date->day;
 
-        $week = min((int) ceil($dayOfMonth / 7), 4);
-        $weekStartDay = ($week - 1) * 7 + 1;
-        $weekEndDay = min($week * 7, $date->daysInMonth);
+        // Calculate the cutoff day (4 days before month end)
+        $lastDayOfMonth = $date->copy()->endOfMonth()->day;
+        $cutoffDay = $lastDayOfMonth - 4;
 
-        if ($week === 4) {
-            $weekEndDay = $date->daysInMonth;
-        }
-
-        $weekStart = Carbon::create($year, $month, $weekStartDay);
-        $weekEnd = Carbon::create($year, $month, $weekEndDay);
+        // Determine which week we're in (1-4) - for reference only
+        $week = self::calculateWeekNumber($dayOfMonth, $lastDayOfMonth);
 
         return [
             "week" => $week,
             "month" => $month,
             "year" => $year,
-            "week_start" => $weekStart->format("Y-m-d"),
-            "week_end" => $weekEnd->format("Y-m-d"),
             "day_of_month" => $dayOfMonth,
+            "last_day_of_month" => $lastDayOfMonth,
+            "cutoff_day" => $cutoffDay,
+            "is_within_submission_period" => $dayOfMonth <= $cutoffDay,
+            "days_until_cutoff" => max(0, $cutoffDay - $dayOfMonth),
         ];
     }
 
-    // Keep other methods (getFourWeekPeriod, getRetail454Calendar) as they are
-    // if you're using them elsewhere in your system
+    /**
+     * Calculate which week (1-4) based on day of month
+     *
+     * @param int $dayOfMonth
+     * @param int $lastDayOfMonth
+     * @return int
+     */
+    private static function calculateWeekNumber(
+        int $dayOfMonth,
+        int $lastDayOfMonth
+    ): int {
+        // Divide the month into 4 equal parts
+        $daysPerWeek = $lastDayOfMonth / 4;
+
+        $week = (int) ceil($dayOfMonth / $daysPerWeek);
+
+        // Ensure week is between 1 and 4
+        return min(4, max(1, $week));
+    }
+
+    /**
+     * Automatically determine next available week and validate if user can submit
+     *
+     * @param int $storeChecklistId
+     * @param int|null $userId
+     * @param Carbon|null $date
+     * @return array
+     */
+    public static function canSubmitToday(
+        int $storeChecklistId,
+        ?int $userId = null,
+        ?Carbon $date = null
+    ): array {
+        $date = $date ?? Carbon::today();
+        $currentMonthInfo = self::getMonthBasedFourWeek($date);
+
+        // Check if within submission period (4 days before month end)
+        if (!$currentMonthInfo["is_within_submission_period"]) {
+            return [
+                "can_submit" => false,
+                "reason" =>
+                    "Submission period has ended (4 days before month end)",
+                "week_info" => $currentMonthInfo,
+                "next_available_week" => null,
+            ];
+        }
+
+        // Check if already submitted today (1 submission per day limit)
+        if ($userId) {
+            $hasSubmittedToday = StoreChecklistWeeklyRecord::where(
+                "store_checklist_id",
+                $storeChecklistId
+            )
+                ->where("graded_by", $userId)
+                ->whereDate("created_at", $date->toDateString())
+                ->exists();
+
+            if ($hasSubmittedToday) {
+                return [
+                    "can_submit" => false,
+                    "reason" =>
+                        "Already submitted for today. You can only submit once per day.",
+                    "week_info" => $currentMonthInfo,
+                    "next_available_week" => null,
+                ];
+            }
+
+            // Get all submitted weeks for this month
+            $submittedWeeks = StoreChecklistWeeklyRecord::where(
+                "store_checklist_id",
+                $storeChecklistId
+            )
+                ->where("graded_by", $userId)
+                ->where("month", $currentMonthInfo["month"])
+                ->where("year", $currentMonthInfo["year"])
+                ->pluck("week")
+                ->toArray();
+
+            // Find the next available week (1-4)
+            $allWeeks = [1, 2, 3, 4];
+            $availableWeeks = array_diff($allWeeks, $submittedWeeks);
+
+            if (empty($availableWeeks)) {
+                return [
+                    "can_submit" => false,
+                    "reason" =>
+                        "All weeks (1-4) have been submitted for this month.",
+                    "week_info" => $currentMonthInfo,
+                    "next_available_week" => null,
+                    "submitted_weeks" => $submittedWeeks,
+                ];
+            }
+
+            // Get the lowest available week number
+            $nextWeek = min($availableWeeks);
+
+            return [
+                "can_submit" => true,
+                "reason" => null,
+                "week_info" => $currentMonthInfo,
+                "next_available_week" => $nextWeek,
+                "submitted_weeks" => $submittedWeeks,
+                "remaining_weeks" => array_values($availableWeeks),
+            ];
+        }
+
+        return [
+            "can_submit" => true,
+            "reason" => null,
+            "week_info" => $currentMonthInfo,
+            "next_available_week" => 1, // Default to week 1 if no userId
+        ];
+    }
+
+    /**
+     * Get which weeks are still available for submission
+     *
+     * @param int $storeChecklistId
+     * @param int $userId
+     * @param Carbon|null $date
+     * @return array
+     */
+    public static function getAvailableWeeksForUser(
+        int $storeChecklistId,
+        int $userId,
+        ?Carbon $date = null
+    ): array {
+        $date = $date ?? Carbon::today();
+        $currentMonthInfo = self::getMonthBasedFourWeek($date);
+
+        if (!$currentMonthInfo["is_within_submission_period"]) {
+            return [
+                "available_weeks" => [],
+                "submitted_weeks" => [],
+                "reason" => "Submission period has ended",
+                "current_month_info" => $currentMonthInfo,
+            ];
+        }
+
+        // Get all submitted weeks for this month
+        $submittedWeeks = StoreChecklistWeeklyRecord::where(
+            "store_checklist_id",
+            $storeChecklistId
+        )
+            ->where("graded_by", $userId)
+            ->where("month", $currentMonthInfo["month"])
+            ->where("year", $currentMonthInfo["year"])
+            ->pluck("week")
+            ->toArray();
+
+        // All weeks minus submitted weeks
+        $allWeeks = [1, 2, 3, 4];
+        $availableWeeks = array_diff($allWeeks, $submittedWeeks);
+
+        // Check if can submit today (1 per day limit)
+        $canSubmitToday = !StoreChecklistWeeklyRecord::where(
+            "store_checklist_id",
+            $storeChecklistId
+        )
+            ->where("graded_by", $userId)
+            ->whereDate("created_at", $date->toDateString())
+            ->exists();
+
+        return [
+            "available_weeks" => array_values($availableWeeks),
+            "submitted_weeks" => $submittedWeeks,
+            "can_submit_today" => $canSubmitToday,
+            "current_month_info" => $currentMonthInfo,
+        ];
+    }
+
+    /**
+     * Get all available weeks for submission in current month
+     *
+     * @param Carbon $date
+     * @return array
+     */
+    public static function getAvailableWeeks(Carbon $date): array
+    {
+        $weekInfo = self::getMonthBasedFourWeek($date);
+
+        if (!$weekInfo["is_within_submission_period"]) {
+            return [];
+        }
+
+        // User can submit to any week 1-4 before cutoff
+        return range(1, 4);
+    }
+
+    /**
+     * Get submission statistics for current month
+     *
+     * @param int $storeChecklistId
+     * @param int $userId
+     * @param Carbon $date
+     * @return array
+     */
+    public static function getMonthSubmissionStats(
+        int $storeChecklistId,
+        int $userId,
+        Carbon $date
+    ): array {
+        $weekInfo = self::getMonthBasedFourWeek($date);
+
+        $submissions = StoreChecklistWeeklyRecord::where(
+            "store_checklist_id",
+            $storeChecklistId
+        )
+            ->where("graded_by", $userId)
+            ->where("month", $weekInfo["month"])
+            ->where("year", $weekInfo["year"])
+            ->get();
+
+        $submissionsByWeek = $submissions->groupBy("week")->map->count();
+
+        return [
+            "total_submissions" => $submissions->count(),
+            "week_1_count" => $submissionsByWeek->get(1, 0),
+            "week_2_count" => $submissionsByWeek->get(2, 0),
+            "week_3_count" => $submissionsByWeek->get(3, 0),
+            "week_4_count" => $submissionsByWeek->get(4, 0),
+            "days_until_cutoff" => $weekInfo["days_until_cutoff"],
+            "can_still_submit" => $weekInfo["is_within_submission_period"],
+        ];
+    }
+
+    /**
+     * Get date range for a specific week in a month
+     *
+     * @param int $week
+     * @param int $month
+     * @param int $year
+     * @return array
+     */
+    public static function getWeekDateRange(
+        int $week,
+        int $month,
+        int $year
+    ): array {
+        $date = Carbon::create($year, $month, 1);
+        $lastDayOfMonth = $date->copy()->endOfMonth()->day;
+        $daysPerWeek = $lastDayOfMonth / 4;
+
+        $startDay = (int) floor(($week - 1) * $daysPerWeek) + 1;
+        $endDay = (int) floor($week * $daysPerWeek);
+
+        // Ensure last week goes to end of month
+        if ($week === 4) {
+            $endDay = $lastDayOfMonth;
+        }
+
+        return [
+            "start_date" => Carbon::create($year, $month, $startDay),
+            "end_date" => Carbon::create($year, $month, $endDay),
+            "start_day" => $startDay,
+            "end_day" => $endDay,
+        ];
+    }
+
+    /**
+     * Get total number of weeks in a month (always 4)
+     *
+     * @param int $month
+     * @param int $year
+     * @return int
+     */
+    public static function getTotalWeeksInMonth(int $month, int $year): int
+    {
+        // Always 4 weeks per month in the new system
+        return 4;
+    }
+
+    /**
+     * Check if a specific week exists in the month
+     *
+     * @param int $week
+     * @param int $month
+     * @param int $year
+     * @return bool
+     */
+    public static function isValidWeek(int $week, int $month, int $year): bool
+    {
+        return $week >= 1 && $week <= 4;
+    }
 }

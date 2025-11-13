@@ -128,6 +128,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
         QAController::class,
         "weeklySkipped",
     ]);
+    Route::patch("quality_assurance/{id}/for_approval", [
+        QAController::class,
+        "forApproval",
+    ]);
     Route::apiResource("quality_assurance", QAController::class);
 
     // Region Area Head Controller
@@ -141,9 +145,13 @@ Route::middleware(["auth:sanctum"])->group(function () {
     Route::apiResource("rating", ScoreRatingController::class);
 
     // Survey Dashboard Controller
-    Route::post("approver_dashboard/{id}/approved", [
+    Route::patch("approver_dashboard/{id}/approved", [
         ApproverDashboardController::class,
         "approved",
+    ]);
+    Route::patch("approver_dashboard/{id}/rejected", [
+        ApproverDashboardController::class,
+        "rejected",
     ]);
     Route::apiResource(
         "approver_dashboard",
