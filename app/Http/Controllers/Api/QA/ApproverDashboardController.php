@@ -43,6 +43,7 @@ class ApproverDashboardController extends Controller
             ->whereHas("store_checklist", function ($query) {
                 $query->whereHas("checklist.sections");
             })
+            ->whereHas("store_checklist.weekly_record.weekly_skipped")
             ->useFilters()
             ->dynamicPaginate();
 

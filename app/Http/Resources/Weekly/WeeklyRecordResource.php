@@ -21,6 +21,8 @@ class WeeklyRecordResource extends JsonResource
             "week" => $this->week,
             "month" => $this->month,
             "year" => $this->year,
+            "start_time" => $this->start_time,
+            "end_time" => $this->end_time,
             "weekly_grade" => $this->weekly_grade,
             "is_auto_grade" => $this->is_auto_grade,
             "grade_source" => $this->grade_source,

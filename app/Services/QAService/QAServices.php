@@ -90,6 +90,8 @@ class QAServices
             "week" => $week,
             "month" => $month,
             "year" => $year,
+            "start_time" => $data["start_time"],
+            "end_time" => $data["end_time"],
             "weekly_grade" => $finalGrade,
             "graded_by" => Auth::id(),
             "status" => "Completed",
@@ -650,6 +652,8 @@ class QAServices
         $finalGrade = $gradeData["grade"] ?? 0;
 
         $weeklyRecord->update([
+            "start_time" => $data["start_time"],
+            "end_time" => $data["end_time"],
             "weekly_grade" => $finalGrade,
             "graded_by" => Auth::id(),
             "store_visit" =>

@@ -22,6 +22,9 @@ return new class extends Migration {
             $table->integer("month")->index();
             $table->integer("year")->index();
 
+            $table->time("start_time")->nullable();
+            $table->time("end_time")->nullable();
+
             $table->decimal("weekly_grade", 5, 2)->nullable();
             $table->boolean("is_auto_grade")->default(true);
             $table->enum("grade_source", ["auto", "manual"])->default("auto");

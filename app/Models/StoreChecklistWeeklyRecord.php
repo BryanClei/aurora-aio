@@ -17,6 +17,8 @@ class StoreChecklistWeeklyRecord extends Model
         "week",
         "month",
         "year",
+        "start_time",
+        "end_time",
         "weekly_grade",
         "is_auto_grade",
         "grade_source",
