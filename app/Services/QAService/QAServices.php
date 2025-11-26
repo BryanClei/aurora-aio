@@ -730,7 +730,6 @@ class QAServices
             }
         }
 
-        // 🔥 LOG AUDIT TRAIL - Same as storeResponse
         AuditTrailHelper::activityLogs(
             moduleType: "QA Dashboard",
             moduleName: "Weekly Record",
@@ -752,7 +751,6 @@ class QAServices
             )
         );
 
-        // Return data in the same format as storeResponse
         return [
             "grade_data" => $gradeData,
             "weekly_record" => $weeklyRecord->fresh(),

@@ -43,9 +43,16 @@ class ApproverDashboardController extends Controller
             ->whereHas("store_checklist", function ($query) {
                 $query->whereHas("checklist.sections");
             })
+            ->whereHas("store_checklist.weekly_record", function ($query) {
+                $query->where("status", "For Approval");
+            })
             ->whereHas("store_checklist.weekly_record.weekly_skipped")
             ->useFilters()
             ->dynamicPaginate();
+
+        if ($store->isEmpty()) {
+            return $this->responseNotFound("", __("messages.no_data_found")); 
+        }
 
         if (!$pagination) {
             QAStoreResource::collection($store);

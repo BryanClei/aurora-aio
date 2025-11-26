@@ -29,6 +29,7 @@ class StoreChecklistWeeklyRecord extends Model
         "expired",
         "condemned",
         "for_approval_reason",
+        "approver_remarks",
     ];
 
     protected $casts = [
