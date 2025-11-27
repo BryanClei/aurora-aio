@@ -51,7 +51,7 @@ class ApproverDashboardController extends Controller
             ->dynamicPaginate();
 
         if ($store->isEmpty()) {
-            return $this->responseNotFound("", __("messages.no_data_found")); 
+            return $this->responseNotFound("", __("messages.no_data_found"));
         }
 
         if (!$pagination) {
@@ -66,7 +66,7 @@ class ApproverDashboardController extends Controller
         );
     }
 
-    public function approved($id)
+    public function approved(Request $request, $id)
     {
         $skipped_records = AutoSkipped::find($id);
 
@@ -75,7 +75,8 @@ class ApproverDashboardController extends Controller
         }
 
         $approved_record = $this->autoSkippedService->approvedFunction(
-            $skipped_records
+            $skipped_records,
+            $request->all()
         );
 
         return $this->responseSuccess(
@@ -84,7 +85,7 @@ class ApproverDashboardController extends Controller
         );
     }
 
-    public function rejected($id)
+    public function rejected(Request $request, $id)
     {
         $skipped_records = AutoSkipped::find($id);
 
@@ -93,7 +94,8 @@ class ApproverDashboardController extends Controller
         }
 
         $rejected_record = $this->autoSkippedService->rejectedFunction(
-            $skipped_records
+            $skipped_records,
+            $request->all()
         );
 
         return $this->responseSuccess(

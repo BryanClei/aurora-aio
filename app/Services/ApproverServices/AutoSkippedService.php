@@ -7,12 +7,12 @@ use App\Models\StoreChecklistWeeklyRecord;
 
 class AutoSkippedService
 {
-    public static function approvedFunction($data)
+    public static function approvedFunction($data, $payload)
     {
         $date_today = Carbon::now("Asia/Manila");
 
         $weekly_id = $data["weekly_id"];
-        $reason = $data["approver_remarks"] ?? null;
+        $reason = $payload["approver_remarks"] ?? null;
 
         StoreChecklistWeeklyRecord::where("id", $weekly_id)->update([
             "status" => "Approved",
@@ -27,12 +27,12 @@ class AutoSkippedService
         return $data;
     }
 
-    public static function rejectedFunction($data)
+    public static function rejectedFunction($data, $payload)
     {
         $date_today = Carbon::now("Asia/Manila");
 
         $weekly_id = $data["weekly_id"];
-        $reason = $data["approver_remarks"] ?? null;
+        return $reason = $payload["approver_remarks"] ?? null;
 
         StoreChecklistWeeklyRecord::where("id", $weekly_id)->update([
             "status" => "Rejected",
