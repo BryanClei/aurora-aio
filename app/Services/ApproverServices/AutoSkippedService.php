@@ -32,7 +32,7 @@ class AutoSkippedService
         $date_today = Carbon::now("Asia/Manila");
 
         $weekly_id = $data["weekly_id"];
-        return $reason = $payload["approver_remarks"] ?? null;
+        $reason = $payload["approver_remarks"] ?? null;
 
         StoreChecklistWeeklyRecord::where("id", $weekly_id)->update([
             "status" => "Rejected",
