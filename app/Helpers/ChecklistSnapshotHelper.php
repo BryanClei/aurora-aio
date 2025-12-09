@@ -84,7 +84,8 @@ class ChecklistSnapshotHelper
                 "name" => $checklist->name,
                 "sections" => self::buildSectionsSnapshot(
                     $checklist,
-                    $data["responses"] ?? []
+                    $data["responses"] ?? [],
+                    $gradeData
                 ),
             ],
             "grade_summary" => [
@@ -105,14 +106,20 @@ class ChecklistSnapshotHelper
      *
      * @param Checklist $checklist
      * @param array $responses
+     * @param array $gradeData
      * @return array
      */
     private static function buildSectionsSnapshot(
         $checklist,
-        array $responses
+        array $responses,
+        array $gradeData
     ): array {
         $sectionsData = [];
         $responsesByQuestion = collect($responses)->keyBy("question_id");
+
+        // Index grade breakdown by section_id for easy lookup
+        $gradeBreakdown = $gradeData["breakdown"] ?? [];
+        $gradeBySection = collect($gradeBreakdown)->keyBy("section_id");
 
         foreach ($checklist->sections as $section) {
             $questionsData = [];
@@ -123,8 +130,17 @@ class ChecklistSnapshotHelper
                 $section_name = $section->category->name;
             }
 
+            // Get the grade data for this section
+            $sectionGrade = $gradeBySection->get($section->id);
+
+            // Index questions grade by question_id for easy lookup
+            $gradeByQuestion = $sectionGrade
+                ? collect($sectionGrade["questions"])->keyBy("question_id")
+                : collect([]);
+
             foreach ($section->questions as $question) {
                 $response = $responsesByQuestion->get($question->id);
+                $questionGrade = $gradeByQuestion->get($question->id);
 
                 $questionData = [
                     "id" => $question->id,
@@ -133,6 +149,20 @@ class ChecklistSnapshotHelper
                     "order_index" => $question->order_index,
                     "options" => self::buildOptionsSnapshot($question),
                     "response" => self::buildResponseData($question, $response),
+                    "grade" => [
+                        "max_points" => $questionGrade["max_points"] ?? 0,
+                        "earned_points" => $questionGrade["earned_points"] ?? 0,
+                        "percentage" =>
+                            $questionGrade["max_points"] > 0
+                                ? round(
+                                    ($questionGrade["earned_points"] /
+                                        $questionGrade["max_points"]) *
+                                        100,
+                                    2
+                                )
+                                : 0,
+                        "has_remarks" => $questionGrade["has_remarks"] ?? false,
+                    ],
                 ];
 
                 $questionsData[] = $questionData;
@@ -146,6 +176,12 @@ class ChecklistSnapshotHelper
                 "description" => $section->description,
                 "order_index" => $section->order_index,
                 "questions" => $questionsData,
+                "grade" => [
+                    "max_points" => $sectionGrade["max_points"] ?? 0,
+                    "earned_points" => $sectionGrade["earned_points"] ?? 0,
+                    "percentage" => $sectionGrade["percentage"] ?? 0,
+                    "total_questions" => $sectionGrade["total_questions"] ?? 0,
+                ],
             ];
         }
 
