@@ -132,6 +132,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
         QAController::class,
         "forApproval",
     ]);
+    Route::get("attachments/view", [
+        QAController::class,
+        "viewSingleAttachment",
+    ]);
     Route::apiResource("quality_assurance", QAController::class);
 
     // Region Area Head Controller

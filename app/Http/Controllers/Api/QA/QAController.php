@@ -145,7 +145,6 @@ class QAController extends Controller
         $filenames = $request->input("filenames", []);
         $zip = $request->input("zip", false);
 
-        // Ensure boolean conversion
         if (is_string($zip)) {
             $zip = $zip === "true" || $zip === "1";
         } else {
@@ -153,6 +152,13 @@ class QAController extends Controller
         }
 
         return $this->qaServices->downloadAttachment($filenames, $zip);
+    }
+
+    public function viewSingleAttachment(Request $request)
+    {
+        $filename = $request->input("filename");
+
+        return $this->qaServices->viewSingleAttachment($filename);
     }
 
     public function weeklySkipped(Request $request)

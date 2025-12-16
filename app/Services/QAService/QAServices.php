@@ -528,6 +528,31 @@ class QAServices
         ]);
     }
 
+    public function viewSingleAttachment($filename)
+    {
+        $filename = basename($filename);
+
+        if (
+            !Storage::disk("public")->exists(
+                "checklist_attachments/" . $filename
+            )
+        ) {
+            return response()->json(
+                [
+                    "success" => false,
+                    "message" => "File not found",
+                ],
+                404
+            );
+        }
+
+        $filePath = Storage::disk("public")->path(
+            "checklist_attachments/" . $filename
+        );
+
+        return response()->file($filePath);
+    }
+
     public static function autoSkip(array $data)
     {
         $today = Carbon::today();
