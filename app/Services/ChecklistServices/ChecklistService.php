@@ -30,13 +30,17 @@ class ChecklistService
                 "category_id" => $categoryId,
             ]);
 
+            //section id 1
+
             foreach ($sectionData["questions"] as $questionData) {
                 $question = $section->questions()->create([
-                    "section_id" => $section->id,
+                    "section_id" => $section->id, //section id 1
                     "question_text" => $questionData["question_text"],
                     "question_type" => $questionData["question_type"],
                     "order_index" => $questionData["order_index"],
                 ]);
+
+                //question id 1
 
                 if (
                     in_array($questionData["question_type"], [
