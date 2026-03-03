@@ -4,37 +4,55 @@ namespace App\Helpers;
 
 use Carbon\Carbon;
 use App\Models\StoreChecklistWeeklyRecord;
+use App\Models\AllowableDays;
 
 class FourWeekCalendarHelper
 {
     /**
-     * Get the current week information based on 4-week calendar system
+     * Get allowable days from AllowableDays model.
+     * This value controls how many days into the new month a user can still
+     * submit for the PREVIOUS month.
+     * e.g. allowable_days = 5 → January survey can be submitted up to February 5.
+     *
+     * @return int
+     */
+    public static function getGracePeriodDays(): int
+    {
+        try {
+            $allowableDays = AllowableDays::first();
+            return $allowableDays ? (int) $allowableDays->allowable_days : 5;
+        } catch (\Exception $e) {
+            return 5;
+        }
+    }
+
+    /**
+     * Get the current week information based on 4-week calendar system.
+     * There is NO cutoff within the current month — submissions are open
+     * for the entire month. The allowable_days grace period only applies
+     * to previous-month submissions.
      *
      * @param Carbon $date
      * @return array
      */
     public static function getMonthBasedFourWeek(Carbon $date): array
     {
-        $month = $date->month;
-        $year = $date->year;
+        $month      = $date->month;
+        $year       = $date->year;
         $dayOfMonth = $date->day;
 
-        // Calculate the cutoff day (4 days before month end)
         $lastDayOfMonth = $date->copy()->endOfMonth()->day;
-        $cutoffDay = $lastDayOfMonth - 4;
 
-        // Determine which week we're in (1-4) - for reference only
+        // Current month is always open for submission (no cutoff)
         $week = self::calculateWeekNumber($dayOfMonth, $lastDayOfMonth);
 
         return [
-            "week" => $week,
-            "month" => $month,
-            "year" => $year,
-            "day_of_month" => $dayOfMonth,
-            "last_day_of_month" => $lastDayOfMonth,
-            "cutoff_day" => $cutoffDay,
-            "is_within_submission_period" => $dayOfMonth <= $cutoffDay,
-            "days_until_cutoff" => max(0, $cutoffDay - $dayOfMonth),
+            "week"                        => $week,
+            "month"                       => $month,
+            "year"                        => $year,
+            "day_of_month"                => $dayOfMonth,
+            "last_day_of_month"           => $lastDayOfMonth,
+            "is_within_submission_period" => true, // always open within the current month
         ];
     }
 
@@ -49,17 +67,47 @@ class FourWeekCalendarHelper
         int $dayOfMonth,
         int $lastDayOfMonth
     ): int {
-        // Divide the month into 4 equal parts
         $daysPerWeek = $lastDayOfMonth / 4;
-
-        $week = (int) ceil($dayOfMonth / $daysPerWeek);
-
-        // Ensure week is between 1 and 4
+        $week        = (int) ceil($dayOfMonth / $daysPerWeek);
         return min(4, max(1, $week));
     }
 
     /**
-     * Automatically determine next available week and validate if user can submit
+     * Check if we're in the grace period for previous month submissions.
+     * Grace period = first N days of the new month, where N = allowable_days.
+     *
+     * Example: allowable_days = 5
+     *   → January survey can still be submitted on Feb 1–5.
+     *   → From Feb 6 onwards, January is locked.
+     *
+     * @param Carbon $date
+     * @return array
+     */
+    public static function isInGracePeriod(Carbon $date): array
+    {
+        $dayOfMonth      = $date->day;
+        $gracePeriodDays = self::getGracePeriodDays();
+        $isInGracePeriod = $dayOfMonth <= $gracePeriodDays;
+
+        $previousMonth = $date->copy()->subMonth();
+
+        return [
+            "is_in_grace_period"        => $isInGracePeriod,
+            "days_into_month"           => $dayOfMonth,
+            "grace_period_days"         => $gracePeriodDays,
+            "can_submit_previous_month" => $isInGracePeriod,
+            "previous_month"            => $previousMonth->month,
+            "previous_year"             => $previousMonth->year,
+        ];
+    }
+
+    /**
+     * Automatically determine next available week and validate if user can submit.
+     *
+     * Logic:
+     *  1. Check 1-per-day limit — user can only submit once per day.
+     *  2. If within grace period AND previous month has missing weeks → submit to previous month.
+     *  3. Otherwise → submit to current month (always open, no cutoff).
      *
      * @param int $storeChecklistId
      * @param int|null $userId
@@ -71,22 +119,12 @@ class FourWeekCalendarHelper
         ?int $userId = null,
         ?Carbon $date = null
     ): array {
-        $date = $date ?? Carbon::today();
+        $date             = $date ?? Carbon::today();
         $currentMonthInfo = self::getMonthBasedFourWeek($date);
+        $gracePeriodInfo  = self::isInGracePeriod($date);
 
-        // Check if within submission period (4 days before month end)
-        if (!$currentMonthInfo["is_within_submission_period"]) {
-            return [
-                "can_submit" => false,
-                "reason" =>
-                    "Submission period has ended (4 days before month end)",
-                "week_info" => $currentMonthInfo,
-                "next_available_week" => null,
-            ];
-        }
-
-        // Check if already submitted today (1 submission per day limit)
         if ($userId) {
+            // 1-per-day limit
             $hasSubmittedToday = StoreChecklistWeeklyRecord::where(
                 "store_checklist_id",
                 $storeChecklistId
@@ -95,61 +133,152 @@ class FourWeekCalendarHelper
                 ->whereDate("created_at", $date->toDateString())
                 ->exists();
 
-            if ($hasSubmittedToday) {
-                return [
-                    "can_submit" => false,
-                    "reason" =>
-                        "Already submitted for today. You can only submit once per day.",
-                    "week_info" => $currentMonthInfo,
-                    "next_available_week" => null,
-                ];
+            // if ($hasSubmittedToday) {
+            //     return [
+            //         "can_submit"          => false,
+            //         "reason"              => "Already submitted for today. You can only submit once per day.",
+            //         "week_info"           => $currentMonthInfo,
+            //         "next_available_week" => null,
+            //         "target_month"        => null,
+            //         "target_year"         => null,
+            //     ];
+            // }
+
+            // Determine which month to target
+            $targetMonth = $currentMonthInfo["month"];
+            $targetYear  = $currentMonthInfo["year"];
+
+            // Priority: grace period → fill in missing previous-month weeks first
+            if ($gracePeriodInfo["is_in_grace_period"]) {
+                $previousMonthMissingWeeks = self::getMissingWeeks(
+                    $storeChecklistId,
+                    $userId,
+                    $gracePeriodInfo["previous_month"],
+                    $gracePeriodInfo["previous_year"]
+                );
+
+                if (!empty($previousMonthMissingWeeks)) {
+                    $targetMonth = $gracePeriodInfo["previous_month"];
+                    $targetYear  = $gracePeriodInfo["previous_year"];
+                    $nextWeek    = min($previousMonthMissingWeeks);
+
+                    return [
+                        "can_submit"                 => true,
+                        "reason"                     => null,
+                        "week_info"                  => $currentMonthInfo,
+                        "next_available_week"         => $nextWeek,
+                        "target_month"               => $targetMonth,
+                        "target_year"                => $targetYear,
+                        "submitted_weeks"            => self::getSubmittedWeeks(
+                            $storeChecklistId,
+                            $userId,
+                            $targetMonth,
+                            $targetYear
+                        ),
+                        "remaining_weeks"            => array_values($previousMonthMissingWeeks),
+                        "is_grace_period_submission" => true,
+                        "grace_period_info"          => $gracePeriodInfo,
+                    ];
+                }
             }
 
-            // Get all submitted weeks for this month
-            $submittedWeeks = StoreChecklistWeeklyRecord::where(
-                "store_checklist_id",
-                $storeChecklistId
-            )
-                ->where("graded_by", $userId)
-                ->where("month", $currentMonthInfo["month"])
-                ->where("year", $currentMonthInfo["year"])
-                ->pluck("week")
-                ->toArray();
+            // Current month — always open, no cutoff
+            $submittedWeeks = self::getSubmittedWeeks(
+                $storeChecklistId,
+                $userId,
+                $targetMonth,
+                $targetYear
+            );
 
-            // Find the next available week (1-4)
-            $allWeeks = [1, 2, 3, 4];
+            $allWeeks       = [1, 2, 3, 4];
             $availableWeeks = array_diff($allWeeks, $submittedWeeks);
 
             if (empty($availableWeeks)) {
                 return [
-                    "can_submit" => false,
-                    "reason" =>
-                        "All weeks (1-4) have been submitted for this month.",
-                    "week_info" => $currentMonthInfo,
+                    "can_submit"          => false,
+                    "reason"              => "All weeks (1-4) have been submitted for this month.",
+                    "week_info"           => $currentMonthInfo,
                     "next_available_week" => null,
-                    "submitted_weeks" => $submittedWeeks,
+                    "target_month"        => $targetMonth,
+                    "target_year"         => $targetYear,
+                    "submitted_weeks"     => $submittedWeeks,
                 ];
             }
 
-            // Get the lowest available week number
             $nextWeek = min($availableWeeks);
 
             return [
-                "can_submit" => true,
-                "reason" => null,
-                "week_info" => $currentMonthInfo,
-                "next_available_week" => $nextWeek,
-                "submitted_weeks" => $submittedWeeks,
-                "remaining_weeks" => array_values($availableWeeks),
+                "can_submit"                 => true,
+                "reason"                     => null,
+                "week_info"                  => $currentMonthInfo,
+                "next_available_week"         => $nextWeek,
+                "target_month"               => $targetMonth,
+                "target_year"                => $targetYear,
+                "submitted_weeks"            => $submittedWeeks,
+                "remaining_weeks"            => array_values($availableWeeks),
+                "is_grace_period_submission" => false,
             ];
         }
 
         return [
-            "can_submit" => true,
-            "reason" => null,
-            "week_info" => $currentMonthInfo,
-            "next_available_week" => 1, // Default to week 1 if no userId
+            "can_submit"          => true,
+            "reason"              => null,
+            "week_info"           => $currentMonthInfo,
+            "next_available_week" => 1,
+            "target_month"        => $currentMonthInfo["month"],
+            "target_year"         => $currentMonthInfo["year"],
         ];
+    }
+
+    /**
+     * Get submitted weeks for a specific month/year
+     *
+     * @param int $storeChecklistId
+     * @param int $userId
+     * @param int $month
+     * @param int $year
+     * @return array
+     */
+    private static function getSubmittedWeeks(
+        int $storeChecklistId,
+        int $userId,
+        int $month,
+        int $year
+    ): array {
+        return StoreChecklistWeeklyRecord::where(
+            "store_checklist_id",
+            $storeChecklistId
+        )
+            ->where("graded_by", $userId)
+            ->where("month", $month)
+            ->where("year", $year)
+            ->pluck("week")
+            ->toArray();
+    }
+
+    /**
+     * Get missing weeks for a specific month/year
+     *
+     * @param int $storeChecklistId
+     * @param int $userId
+     * @param int $month
+     * @param int $year
+     * @return array
+     */
+    private static function getMissingWeeks(
+        int $storeChecklistId,
+        int $userId,
+        int $month,
+        int $year
+    ): array {
+        $submittedWeeks = self::getSubmittedWeeks(
+            $storeChecklistId,
+            $userId,
+            $month,
+            $year
+        );
+        $allWeeks = [1, 2, 3, 4];
+        return array_diff($allWeeks, $submittedWeeks);
     }
 
     /**
@@ -165,35 +294,16 @@ class FourWeekCalendarHelper
         int $userId,
         ?Carbon $date = null
     ): array {
-        $date = $date ?? Carbon::today();
+        $date             = $date ?? Carbon::today();
         $currentMonthInfo = self::getMonthBasedFourWeek($date);
+        $gracePeriodInfo  = self::isInGracePeriod($date);
 
-        if (!$currentMonthInfo["is_within_submission_period"]) {
-            return [
-                "available_weeks" => [],
-                "submitted_weeks" => [],
-                "reason" => "Submission period has ended",
-                "current_month_info" => $currentMonthInfo,
-            ];
-        }
+        $result = [
+            "current_month_info" => $currentMonthInfo,
+            "grace_period_info"  => $gracePeriodInfo,
+        ];
 
-        // Get all submitted weeks for this month
-        $submittedWeeks = StoreChecklistWeeklyRecord::where(
-            "store_checklist_id",
-            $storeChecklistId
-        )
-            ->where("graded_by", $userId)
-            ->where("month", $currentMonthInfo["month"])
-            ->where("year", $currentMonthInfo["year"])
-            ->pluck("week")
-            ->toArray();
-
-        // All weeks minus submitted weeks
-        $allWeeks = [1, 2, 3, 4];
-        $availableWeeks = array_diff($allWeeks, $submittedWeeks);
-
-        // Check if can submit today (1 per day limit)
-        $canSubmitToday = !StoreChecklistWeeklyRecord::where(
+        $result["can_submit_today"] = !StoreChecklistWeeklyRecord::where(
             "store_checklist_id",
             $storeChecklistId
         )
@@ -201,29 +311,59 @@ class FourWeekCalendarHelper
             ->whereDate("created_at", $date->toDateString())
             ->exists();
 
-        return [
-            "available_weeks" => array_values($availableWeeks),
-            "submitted_weeks" => $submittedWeeks,
-            "can_submit_today" => $canSubmitToday,
-            "current_month_info" => $currentMonthInfo,
+        // Previous month (only visible if within grace period)
+        if ($gracePeriodInfo["is_in_grace_period"]) {
+            $previousMonthMissingWeeks = self::getMissingWeeks(
+                $storeChecklistId,
+                $userId,
+                $gracePeriodInfo["previous_month"],
+                $gracePeriodInfo["previous_year"]
+            );
+
+            $result["previous_month"] = [
+                "month"           => $gracePeriodInfo["previous_month"],
+                "year"            => $gracePeriodInfo["previous_year"],
+                "available_weeks" => array_values($previousMonthMissingWeeks),
+                "submitted_weeks" => self::getSubmittedWeeks(
+                    $storeChecklistId,
+                    $userId,
+                    $gracePeriodInfo["previous_month"],
+                    $gracePeriodInfo["previous_year"]
+                ),
+            ];
+        }
+
+        // Current month — always open
+        $currentMonthMissingWeeks = self::getMissingWeeks(
+            $storeChecklistId,
+            $userId,
+            $currentMonthInfo["month"],
+            $currentMonthInfo["year"]
+        );
+
+        $result["current_month"] = [
+            "month"           => $currentMonthInfo["month"],
+            "year"            => $currentMonthInfo["year"],
+            "available_weeks" => array_values($currentMonthMissingWeeks),
+            "submitted_weeks" => self::getSubmittedWeeks(
+                $storeChecklistId,
+                $userId,
+                $currentMonthInfo["month"],
+                $currentMonthInfo["year"]
+            ),
         ];
+
+        return $result;
     }
 
     /**
-     * Get all available weeks for submission in current month
+     * Get all available weeks for submission in current month (always 1-4, no cutoff)
      *
      * @param Carbon $date
      * @return array
      */
     public static function getAvailableWeeks(Carbon $date): array
     {
-        $weekInfo = self::getMonthBasedFourWeek($date);
-
-        if (!$weekInfo["is_within_submission_period"]) {
-            return [];
-        }
-
-        // User can submit to any week 1-4 before cutoff
         return range(1, 4);
     }
 
@@ -255,12 +395,11 @@ class FourWeekCalendarHelper
 
         return [
             "total_submissions" => $submissions->count(),
-            "week_1_count" => $submissionsByWeek->get(1, 0),
-            "week_2_count" => $submissionsByWeek->get(2, 0),
-            "week_3_count" => $submissionsByWeek->get(3, 0),
-            "week_4_count" => $submissionsByWeek->get(4, 0),
-            "days_until_cutoff" => $weekInfo["days_until_cutoff"],
-            "can_still_submit" => $weekInfo["is_within_submission_period"],
+            "week_1_count"      => $submissionsByWeek->get(1, 0),
+            "week_2_count"      => $submissionsByWeek->get(2, 0),
+            "week_3_count"      => $submissionsByWeek->get(3, 0),
+            "week_4_count"      => $submissionsByWeek->get(4, 0),
+            "can_still_submit"  => true, // always open within current month
         ];
     }
 
@@ -277,23 +416,22 @@ class FourWeekCalendarHelper
         int $month,
         int $year
     ): array {
-        $date = Carbon::create($year, $month, 1);
+        $date           = Carbon::create($year, $month, 1);
         $lastDayOfMonth = $date->copy()->endOfMonth()->day;
-        $daysPerWeek = $lastDayOfMonth / 4;
+        $daysPerWeek    = $lastDayOfMonth / 4;
 
         $startDay = (int) floor(($week - 1) * $daysPerWeek) + 1;
-        $endDay = (int) floor($week * $daysPerWeek);
+        $endDay   = (int) floor($week * $daysPerWeek);
 
-        // Ensure last week goes to end of month
         if ($week === 4) {
             $endDay = $lastDayOfMonth;
         }
 
         return [
             "start_date" => Carbon::create($year, $month, $startDay),
-            "end_date" => Carbon::create($year, $month, $endDay),
-            "start_day" => $startDay,
-            "end_day" => $endDay,
+            "end_date"   => Carbon::create($year, $month, $endDay),
+            "start_day"  => $startDay,
+            "end_day"    => $endDay,
         ];
     }
 
@@ -306,7 +444,6 @@ class FourWeekCalendarHelper
      */
     public static function getTotalWeeksInMonth(int $month, int $year): int
     {
-        // Always 4 weeks per month in the new system
         return 4;
     }
 

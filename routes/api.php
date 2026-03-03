@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\PatchNote\PatchNoteController;
 use App\Http\Controllers\Api\User\UserManagementController;
 use App\Http\Controllers\Api\QA\ApproverDashboardController;
 use App\Http\Controllers\Api\Store\StoreChecklistController;
+use App\Http\Controllers\Api\Allowable\AllowableDaysController;
+use App\Http\Controllers\Api\GradingRule\GradingRuleController;
 use App\Http\Controllers\Api\OneCharging\OneChargingController;
 use App\Http\Controllers\Api\ScoreRating\ScoreRatingController;
 use App\Http\Controllers\Api\RegionAreaHead\RegionAreaHeadController;
@@ -32,11 +34,17 @@ Route::get("patch_notes/{patchNote}/public_display", [
 Route::middleware(["auth_key"])->group(function () {
     Route::get("one_charging/api", [OneChargingController::class, "index"]);
     Route::post("one_charging/sync", [OneChargingController::class, "sync"]);
+
+    Route::post("sync_to_one_rdf/one_rdf_user", [OneChargingController::class, "oneRdfUserSync"]);
+    Route::patch("sync_to_one_rdf/change_password/{id}", [OneChargingController::class, "changePassword"]);
+    Route::patch("sync_to_one_rdf/reset_password/{id}", [OneChargingController::class, "resetPassword"]);
 });
 
 Route::middleware(["auth:sanctum"])->group(function () {
     Route::post("logout", [AuthController::class, "logout"]);
 
+    Route::get("one_rdf_user/display", [OneChargingController::class, "oneRdfUserIndex"]);
+    Route::get("one_rdf_user/display/{id}", [OneChargingController::class, "oneRdfUserShow"]);
     Route::get("one_charging", [OneChargingController::class, "index"]);
     Route::get("one_charging/{id}", [OneChargingController::class, "show"]);
     Route::post("one_charging/system_sync", [
@@ -136,6 +144,14 @@ Route::middleware(["auth:sanctum"])->group(function () {
         QAController::class,
         "viewSingleAttachment",
     ]);
+    Route::patch("quality_assurance/{id}/add_signature", [
+        QAController::class,
+        "addSignature",
+    ]);
+    Route::get("quality_assurance/{id}/view_attachment", [
+        QAController::class,
+        "viewAttachment",
+    ]);
     Route::apiResource("quality_assurance", QAController::class);
 
     // Region Area Head Controller
@@ -171,4 +187,8 @@ Route::middleware(["auth:sanctum"])->group(function () {
         ExportStoreChecklistController::class,
         "storeAreaPerWeekExport",
     ]);
+
+    Route::apiResource("grade_rule", GradingRuleController::class);
+
+    Route::apiResource("allowable_days", AllowableDaysController::class);
 });

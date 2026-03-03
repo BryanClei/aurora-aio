@@ -36,6 +36,8 @@ class WeeklyRecordResource extends JsonResource
             "deleted_at" => $this->deleted_at,
             "for_approval_reason" => $this->for_approval_reason,
             "approver_remarks" => $this->approver_remarks,
+            "attachment_path" => $this->attachment_path,
+            "attachment_uploaded_at" => $this->attachment_uploaded_at,
             // "weekly_response" => WeeklyQAResponseResource::collection(
             //     $this->weekly_response
             // ),

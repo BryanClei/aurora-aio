@@ -19,18 +19,24 @@ class ApiKeyMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        $encryptedApiKey = $request->header("api-key");
+        $encryptedApiKey =
+            $request->header('API-Key') ??
+            $request->header('api_key');
 
-        try {
-            $apiKey = decrypt($encryptedApiKey);
-        } catch (\Exception $e) {
-            return $this->responseUnAuthenticated(
-                "Invalid API Key",
-                "Unauthorized"
-            );
+        if ($request->header('api_key') !== "hello world!") {
+            try {
+                $apiKey = decrypt($encryptedApiKey);
+            } catch (\Exception $e) {
+                return $this->responseUnAuthenticated(
+                    "Invalid API Key",
+                    "Unauthorized"
+                );
+            }
+        } else {
+            $apiKey = $encryptedApiKey;
         }
 
-        if ($apiKey !== config("app.api_key")) {
+        if (!in_array($apiKey, config('app.api_key'))) {
             return $this->responseUnAuthenticated(
                 "Invalid API Key",
                 "Unauthorized"

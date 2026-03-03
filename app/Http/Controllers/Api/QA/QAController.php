@@ -15,6 +15,7 @@ use App\Http\Resources\Area\QAAreaResource;
 use App\Http\Resources\Store\QAStoreResource;
 use App\Http\Resources\Weekly\WeeklyQAResource;
 use App\Http\Resources\Weekly\WeeklyQAStoreResource;
+use App\Models\StoreChecklistWeeklyRecord;
 
 class QAController extends Controller
 {
@@ -50,6 +51,10 @@ class QAController extends Controller
             })
             ->useFilters()
             ->dynamicPaginate();
+
+        if ($store->isEmpty()) {
+            return $this->responseNotFound("No store checklist found.");
+        }
 
         if (!$pagination) {
             QAStoreResource::collection($store);
@@ -102,9 +107,7 @@ class QAController extends Controller
         );
     }
 
-    public function filteredByWeek($id)
-    {
-    }
+    public function filteredByWeek($id) {}
 
     public function store(StoreRequest $request)
     {
@@ -191,5 +194,40 @@ class QAController extends Controller
             "Store checklist submitted for approval successfully.",
             $answer
         );
+    }
+
+    public function addSignature(Request $request, $id)
+    {
+        $weekly_record = $this->qaServices->addSignature(
+            $id,
+            $request->file('signature'),      // file (nullable)
+            $request->input('signature')       // text "true" (nullable)
+        );
+
+        if (!$weekly_record) {
+            return $this->responseNotFound(__("messages.id_not_found"));
+        }
+
+        if (is_string($weekly_record)) {
+            return $this->responseUnprocessable($weekly_record);
+        }
+
+        return $this->responseSuccess(
+            "Signature added successfully.",
+            $weekly_record
+        );
+    }
+
+    public function viewAttachment($id)
+    {
+        $attachment = $this->qaServices->viewAttachment($id);
+
+        if (!$attachment) {
+            return $this->responseNotFound(
+                __("messages.data_not_found")
+            );
+        }
+
+        return $attachment;
     }
 }

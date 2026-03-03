@@ -120,5 +120,5 @@ return [
         "store" => env("APP_MAINTENANCE_STORE", "database"),
     ],
 
-    "api_key" => env("AURORA_API_KEY", null),
+    "api_key" => [env("AURORA_API_KEY", null), env("ONE_KEY", null)],
 ];

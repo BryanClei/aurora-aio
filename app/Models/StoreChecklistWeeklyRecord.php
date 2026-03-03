@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class StoreChecklistWeeklyRecord extends Model
 {
@@ -30,6 +31,8 @@ class StoreChecklistWeeklyRecord extends Model
         "condemned",
         "for_approval_reason",
         "approver_remarks",
+        "attachment_path",
+        "attachment_uploaded_at"
     ];
 
     protected $casts = [

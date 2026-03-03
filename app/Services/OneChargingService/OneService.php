@@ -3,7 +3,10 @@
 namespace App\Services\OneChargingService;
 
 use App\Models\OneCharging;
+use App\Models\OneRdfUser;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 
 class OneService
@@ -107,5 +110,134 @@ class OneService
                 "sync_updated" => $updatedRecords->count(),
             ],
         ];
+    }
+
+    public function userSync($data)
+    {
+        $filteredData = collect($data)->only([
+            "id_prefix",
+            "id_no",
+            "username",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "suffix",
+            "password",
+        ])->toArray();
+
+        $employeeId = $filteredData["id_prefix"] . "-" . $filteredData["id_no"];
+
+        $user = User::where("id_prefix", $filteredData["id_prefix"])
+            ->where("id_no", $filteredData["id_no"])
+            ->first();
+
+        $oneRdfUser = OneRdfUser::where("id_prefix", $filteredData["id_prefix"])
+            ->where("id_no", $filteredData["id_no"])
+            ->first();
+
+        if ($user) {
+            $user->fill($filteredData);
+
+            if ($user->isDirty()) {
+                $user->save();
+                return [
+                    "updated" => true,
+                    "data" => $user,
+                    "changes" => $user->getDirty(),
+                ];
+            }
+
+            return [
+                "updated" => false,
+                "data" => $user,
+            ];
+        }
+
+        if ($oneRdfUser) {
+            $oneRdfUser->fill($filteredData);
+
+            if ($oneRdfUser->isDirty()) {
+                $oneRdfUser->save();
+                return [
+                    "updated" => true,
+                    "data" => $oneRdfUser,
+                    "changes" => $oneRdfUser->getDirty(),
+                ];
+            }
+
+            return [
+                "updated" => false,
+                "data" => $oneRdfUser,
+            ];
+        }
+
+        $newUser = OneRdfUser::create($filteredData);
+
+        return [
+            "created" => true,
+            "data" => $newUser,
+        ];
+    }
+
+    public function oneRdfUserIndex($data)
+    {
+        $one_user = OneRdfUser::useFilters()
+            ->dynamicPaginate();
+
+        if ($one_user->isEmpty()) {
+            return null;
+        }
+
+        return $one_user;
+    }
+
+    public function oneRdfUserShow($id)
+    {
+        $one_user = OneRdfUser::where("id", $id)
+            ->first();
+
+        if (!$one_user) {
+            return null;
+        }
+
+        return $one_user;
+    }
+
+    public function changePassword($data, $id)
+    {
+        [$prefix, $number] = explode("-", $id);
+
+        $user = User::where("id_prefix", $prefix)
+            ->where("id_no", $number)
+            ->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        $user->update([
+            "password" => Hash::make($data["password"]),
+        ]);
+
+        return $user;
+    }
+
+    public function resetPassword($id)
+    {
+        [$prefix, $number] = explode("-", $id);
+
+        $user = User::where("id_prefix", $prefix)
+            ->where("id_no", $number)
+            ->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        $user->update([
+            "password" => Hash::make($user->username),
+        ]);
+
+        return $user;
     }
 }

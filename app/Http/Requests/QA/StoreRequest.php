@@ -142,20 +142,20 @@ class StoreRequest extends FormRequest
                 ->where("year", $year)
                 ->exists();
 
-            if ($alreadyAnswered) {
-                $validator
-                    ->errors()
-                    ->add(
-                        "store_checklist_id",
-                        "You have already submitted a weekly survey for this store checklist (Week " .
-                            $week .
-                            ", " .
-                            $month .
-                            " " .
-                            $year .
-                            ")."
-                    );
-            }
+            // if ($alreadyAnswered) {
+            //     $validator
+            //         ->errors()
+            //         ->add(
+            //             "store_checklist_id",
+            //             "You have already submitted a weekly survey for this store checklist (Week " .
+            //                 $week .
+            //                 ", " .
+            //                 $month .
+            //                 " " .
+            //                 $year .
+            //                 ")."
+            //         );
+            // }
         });
     }
 
@@ -163,17 +163,17 @@ class StoreRequest extends FormRequest
     {
         return [
             "responses.*.attachment.image" =>
-                "The attachment must be an image file.",
+            "The attachment must be an image file.",
             "responses.*.attachment.mimes" =>
-                "The attachment must be a file of type: jpeg, jpg, png, gif, webp.",
+            "The attachment must be a file of type: jpeg, jpg, png, gif, webp.",
             "responses.*.attachment.max" =>
-                "The attachment may not be greater than 10MB.",
+            "The attachment may not be greater than 10MB.",
             "responses.*.attachment.*.image" =>
-                "All attachments must be image files.",
+            "All attachments must be image files.",
             "responses.*.attachment.*.mimes" =>
-                "All attachments must be files of type: jpeg, jpg, png, gif, webp.",
+            "All attachments must be files of type: jpeg, jpg, png, gif, webp.",
             "responses.*.attachment.*.max" =>
-                "Each attachment may not be greater than 10MB.",
+            "Each attachment may not be greater than 10MB.",
         ];
     }
 }

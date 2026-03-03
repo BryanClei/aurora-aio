@@ -37,6 +37,9 @@ return new class extends Migration {
             $table->integer("expired")->nullable();
             $table->integer("condemned")->nullable();
             $table->longText("for_approval_reason")->nullable();
+            $table->string("approver_remarks")->nullable();
+            $table->longText("attachment_path")->nullable();
+            $table->longText("attachment_uploaded_at")->nullable();
 
             $table->timestamps();
             $table->softDeletes();

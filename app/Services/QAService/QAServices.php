@@ -2,23 +2,23 @@
 
 namespace App\Services\QAService;
 
-use ZipArchive;
-use Carbon\Carbon;
-
-use App\Models\User;
-use App\Models\Region;
-use App\Models\AutoSkipped;
-use Illuminate\Support\Str;
 use App\Helpers\AuditTrailHelper;
-use Illuminate\Http\UploadedFile;
-use App\Models\StoreChecklistDuty;
-use Illuminate\Support\Facades\Auth;
-use App\Helpers\GradeCalculatorHelper;
-use App\Models\StoreChecklistResponse;
-use App\Helpers\FourWeekCalendarHelper;
-use Illuminate\Support\Facades\Storage;
 use App\Helpers\ChecklistSnapshotHelper;
+use App\Helpers\FourWeekCalendarHelper;
+use App\Helpers\GradeCalculatorHelper;
+use App\Models\AutoSkipped;
+use App\Models\GradingRule;
+use App\Models\Region;
+use App\Models\StoreChecklistDuty;
+use App\Models\StoreChecklistResponse;
 use App\Models\StoreChecklistWeeklyRecord;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use ZipArchive;
 
 class QAServices
 {
@@ -36,18 +36,20 @@ class QAServices
                 "error" => true,
             ];
         }
-        // Use the automatically determined next available week
+
         $week = $canSubmit["next_available_week"];
+        $month = $canSubmit["target_month"];
+        $year = $canSubmit["target_year"];
 
         $isStoreVisit = ($data["store_visit"] ?? 0) == 1;
 
         $today = Carbon::today();
-        $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
-        // $week = 3;
-        $month = $fourWeekInfo["month"];
-        $year = $fourWeekInfo["year"];
 
-        // 🔥 STEP 1: Process all attachments FIRST
+        $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek($today);
+
+        $isGracePeriodSubmission =
+            $canSubmit["is_grace_period_submission"] ?? false;
+
         $data["responses"] = self::processResponseAttachments(
             $data["responses"] ?? [],
             $data["code"] ?? "checklist",
@@ -56,14 +58,12 @@ class QAServices
             $year
         );
 
-        // STEP 2: Calculate grade with processed responses
         $gradeData = GradeCalculatorHelper::calculate(
             $data["checklist_id"],
             $data["responses"],
             $isStoreVisit
         );
 
-        // 🔥 STEP 3: CREATE COMPLETE AUDIT TRAIL SNAPSHOT
         $auditSnapshot = ChecklistSnapshotHelper::createSnapshot(
             $data,
             $gradeData,
@@ -72,7 +72,6 @@ class QAServices
             $year
         );
 
-        // Check if this qualifies for auto-grade next week
         $autoGradeApplied = false;
         $finalGrade = $gradeData["grade"] ?? 0;
         $autoCreatedRecord = null;
@@ -96,7 +95,7 @@ class QAServices
             "graded_by" => Auth::id(),
             "status" => "Completed",
             "store_visit" =>
-                $data["store_visit"] == 0 ? null : $data["store_visit"],
+            $data["store_visit"] == 0 ? null : $data["store_visit"],
             "expired" => $data["expired"],
             "condemned" => $data["condemned"],
         ]);
@@ -132,8 +131,6 @@ class QAServices
                             $originalResponse["answer"],
                         ]);
                     }
-
-                    // Attachment is already processed - just extract the path
                     $attachmentPath =
                         $originalResponse["attachment"]["file_path"] ?? null;
 
@@ -144,12 +141,12 @@ class QAServices
                         "section_title" => $section["section_title"],
                         "section_score" => $section["earned_points"],
                         "section_order_index" =>
-                            $section["section_order_index"],
+                        $section["section_order_index"],
                         "question_id" => $question["question_id"],
                         "question_type" => $question["question_type"],
                         "question_text" => $question["question_text"],
                         "question_order_index" =>
-                            $question["question_order_index"],
+                        $question["question_order_index"],
                         "answer_text" => $answerText,
                         "selected_options" => $selectedOptions,
                         "store_duty_id" => $storeDutyRecord->id,
@@ -163,7 +160,6 @@ class QAServices
             }
         }
 
-        // After saving current week, check if we should auto-create next week with 100%
         if (
             self::shouldAutoCreateNextWeek(
                 $data["store_checklist_id"],
@@ -184,7 +180,21 @@ class QAServices
             $autoGradeApplied = true;
         }
 
-        // 🔥 LOG AUDIT TRAIL - RIGHT BEFORE RETURN
+        $auditRemarks = sprintf(
+            "Store: %s (ID: %s) | Week %s, Month %s, Year %s | Grade: %s | Store Visit: %s",
+            $auditSnapshot["inspection_metadata"]["store"]["name"] ?? "Unknown",
+            $data["store_id"],
+            $week,
+            $month,
+            $year,
+            $finalGrade,
+            $isStoreVisit ? "Yes" : "No"
+        );
+
+        if ($isGracePeriodSubmission) {
+            $auditRemarks .= " | [Grace Period Submission for Previous Month]";
+        }
+
         AuditTrailHelper::activityLogs(
             moduleType: "QA Dashboard",
             moduleName: "Weekly Record",
@@ -192,17 +202,7 @@ class QAServices
             action: "Submit",
             newData: $auditSnapshot,
             previousData: null,
-            remarks: sprintf(
-                "Store: %s (ID: %s) | Week %s, Month %s, Year %s | Grade: %s | Store Visit: %s",
-                $auditSnapshot["inspection_metadata"]["store"]["name"] ??
-                    "Unknown",
-                $data["store_id"],
-                $week,
-                $month,
-                $year,
-                $finalGrade,
-                $isStoreVisit ? "Yes" : "No"
-            )
+            remarks: $auditRemarks
         );
 
         return [
@@ -213,6 +213,12 @@ class QAServices
             "auto_grade_applied" => $autoGradeApplied,
             "auto_created_record" => $autoCreatedRecord,
             "final_grade" => $finalGrade,
+            "is_grace_period_submission" => $isGracePeriodSubmission,
+            "submission_target" => [
+                "week" => $week,
+                "month" => $month,
+                "year" => $year,
+            ],
             "success" => true,
         ];
     }
@@ -227,7 +233,6 @@ class QAServices
         $processedResponses = [];
 
         foreach ($responses as $response) {
-            // Check if attachment exists and is an UploadedFile
             if (
                 isset($response["attachment"]) &&
                 $response["attachment"] instanceof UploadedFile
@@ -266,18 +271,12 @@ class QAServices
                         "size" => $file->getSize(),
                     ];
                 } catch (\Exception $e) {
-                    // Log error and set attachment to null
-                    \Log::error(
-                        "File upload failed for question {$response["question_id"]}: " .
-                            $e->getMessage()
-                    );
                     $response["attachment"] = null;
                 }
             } elseif (
                 isset($response["attachment"]) &&
                 empty($response["attachment"])
             ) {
-                // Clean up empty attachments
                 $response["attachment"] = null;
             }
 
@@ -303,14 +302,16 @@ class QAServices
             return false;
         }
 
+        $cap = GradingRule::first();
+        $capPercentage = $cap?->cap_percentage ?? 94;
+
         // Current submission's grade must be >= 94
-        if ($currentGrade < 94) {
+        if ($currentGrade < $capPercentage) {
             return false;
         }
 
         // Current submission must not have store_visit, expired, or condemned
         if (
-            ($currentData["store_visit"] ?? 0) == 1 ||
             !empty($currentData["expired"]) ||
             !empty($currentData["condemned"])
         ) {
@@ -353,13 +354,12 @@ class QAServices
             // Check each previous week
             foreach ($previousWeeks as $weekRecord) {
                 // Check if grade is less than 94
-                if ($weekRecord->weekly_grade < 94) {
+                if ($weekRecord->weekly_grade < $capPercentage) {
                     return false;
                 }
 
                 // Check if any week has store_visit, expired, or condemned
                 if (
-                    $weekRecord->store_visit == 1 ||
                     !empty($weekRecord->expired) ||
                     !empty($weekRecord->condemned)
                 ) {
@@ -483,7 +483,7 @@ class QAServices
                     return response()->json(
                         [
                             "message" =>
-                                "No valid files found to include in ZIP.",
+                            "No valid files found to include in ZIP.",
                             "base_path" => $basePath,
                         ],
                         404
@@ -618,7 +618,7 @@ class QAServices
             "year" => $year,
             "approver_id" => $approver->id,
             "approver_name" =>
-                $approver->first_name . " " . $approver->last_name,
+            $approver->first_name . " " . $approver->last_name,
         ]);
 
         return [
@@ -682,7 +682,7 @@ class QAServices
             "weekly_grade" => $finalGrade,
             "graded_by" => Auth::id(),
             "store_visit" =>
-                $data["store_visit"] == 0 ? null : $data["store_visit"],
+            $data["store_visit"] == 0 ? null : $data["store_visit"],
             "expired" => $data["expired"] ?? $weeklyRecord->expired,
             "condemned" => $data["condemned"] ?? $weeklyRecord->condemned,
             "status" => "Completed",
@@ -736,12 +736,12 @@ class QAServices
                         "section_title" => $section["section_title"],
                         "section_score" => $section["earned_points"],
                         "section_order_index" =>
-                            $section["section_order_index"],
+                        $section["section_order_index"],
                         "question_id" => $question["question_id"],
                         "question_type" => $question["question_type"],
                         "question_text" => $question["question_text"],
                         "question_order_index" =>
-                            $question["question_order_index"],
+                        $question["question_order_index"],
                         "answer_text" => $answerText,
                         "selected_options" => $selectedOptions,
                         "store_duty_id" => $storeDutyRecord->id,
@@ -797,11 +797,89 @@ class QAServices
             return __("messages.overdue_only");
         }
 
+        if ($weekly_record->status == "For Approval") {
+            return __("messages.already_approved");
+        }
+
         $weekly_record->update([
             "status" => "For Approval",
             "for_approval_reason" => $reason,
         ]);
 
         return $weekly_record;
+    }
+
+    public function addSignature($id, $signatureFile = null, $signatureText = null)
+    {
+        $weekly_record = StoreChecklistWeeklyRecord::find($id);
+
+        if (!$weekly_record) {
+            return null;
+        }
+
+        if ($weekly_record->attachment_path != null) {
+            if ($weekly_record->attachment_path === 'refused to sign') {
+                return "Already refused to sign.";
+            }
+            return "Signature already exists.";
+        }
+
+        if (!$signatureFile && $signatureText === 'true') {
+            $weekly_record->update([
+                'attachment_path'        => 'refused to sign',
+                'attachment_uploaded_at' => Carbon::now()->timeZone("Asia/Manila"),
+            ]);
+
+            return $weekly_record;
+        }
+
+        if ($signatureFile) {
+            $path = $this->saveSignatureToRecord($signatureFile, $id);
+
+            $weekly_record->update([
+                'attachment_path'        => $path,
+                'attachment_uploaded_at' => Carbon::now()->timeZone("Asia/Manila"),
+            ]);
+
+            return $weekly_record->fresh();
+        }
+
+        return null;
+    }
+
+    protected function saveSignatureToRecord($signature, $weeklyId)
+    {
+        try {
+            $extension = $signature->getClientOriginalExtension();
+            $filename = Str::random(16) . ".{$extension}";
+
+            $path = $signature->storeAs(
+                "store_checklist_weekly_record/signatures/{$weeklyId}",
+                $filename,
+                "public"
+            );
+
+            return $path;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    public function viewAttachment($id)
+    {
+        $weekly_record = StoreChecklistWeeklyRecord::find($id);
+
+        if (!$weekly_record) {
+            return null;
+        }
+
+        if (
+            !$weekly_record->attachment_path ||
+            !Storage::disk("public")->exists($weekly_record->attachment_path)
+        ) {
+            abort(404, "Attachment not found");
+        }
+
+        return Storage::disk("public")->response($weekly_record->attachment_path);
     }
 }

@@ -30,8 +30,6 @@ class ChecklistService
                 "category_id" => $categoryId,
             ]);
 
-            //section id 1
-
             foreach ($sectionData["questions"] as $questionData) {
                 $question = $section->questions()->create([
                     "section_id" => $section->id, //section id 1
@@ -39,8 +37,6 @@ class ChecklistService
                     "question_type" => $questionData["question_type"],
                     "order_index" => $questionData["order_index"],
                 ]);
-
-                //question id 1
 
                 if (
                     in_array($questionData["question_type"], [
@@ -56,7 +52,6 @@ class ChecklistService
                             "order_index" => $optionData["order_index"],
                         ];
 
-                        // Add score_rating_id only for multiple_choice questions
                         if (
                             $questionData["question_type"] === "multiple_choice"
                         ) {
@@ -109,16 +104,17 @@ class ChecklistService
         $sectionIds = [];
 
         foreach ($data["sections"] as $sectionData) {
-            // Handle category creation or lookup
-            $categoryId = null;
+            $categoryId = $sectionData["category_id"] ?? null;
+
             if (!empty($sectionData["category"])) {
-                $category = Category::firstOrCreate([
-                    "name" => $sectionData["category"],
-                ]);
+                $category = Category::updateOrCreate(
+                    ["name" => $sectionData["category"]],
+                    []
+                );
+
                 $categoryId = $category->id;
             }
 
-            // Update or create section
             $section = $checklist->sections()->updateOrCreate(
                 ["id" => $sectionData["id"] ?? null],
                 [
@@ -130,7 +126,6 @@ class ChecklistService
 
             $sectionIds[] = $section->id;
 
-            // === Questions ===
             $questionIds = [];
             foreach ($sectionData["questions"] as $questionData) {
                 $question = $section->questions()->updateOrCreate(
@@ -144,7 +139,6 @@ class ChecklistService
 
                 $questionIds[] = $question->id;
 
-                // === Options ===
                 $optionIds = [];
                 foreach ($questionData["options"] ?? [] as $optionData) {
                     $optionPayload = [
@@ -168,14 +162,12 @@ class ChecklistService
                     $optionIds[] = $option->id;
                 }
 
-                // Delete removed options
                 $question
                     ->options()
                     ->whereNotIn("id", $optionIds)
                     ->delete();
             }
 
-            // Delete removed questions
             $section
                 ->questions()
                 ->whereNotIn("id", $questionIds)
