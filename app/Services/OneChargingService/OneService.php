@@ -136,14 +136,26 @@ class OneService
             ->first();
 
         if ($user) {
+
+            if (!empty($filteredData['password'])) {
+                if (!Hash::check($filteredData['password'], $user->password)) {
+                    $filteredData['password'] = Hash::make($filteredData['password']);
+                } else {
+                    unset($filteredData['password']);
+                }
+            }
+
             $user->fill($filteredData);
 
             if ($user->isDirty()) {
+
+                $changes = $user->getDirty();
                 $user->save();
+
                 return [
                     "updated" => true,
                     "data" => $user,
-                    "changes" => $user->getDirty(),
+                    "changes" => $changes,
                 ];
             }
 

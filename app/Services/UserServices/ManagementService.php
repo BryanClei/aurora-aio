@@ -2,13 +2,37 @@
 
 namespace App\Services\UserServices;
 
-use App\Models\User;
 use App\Models\OneCharging;
+use App\Models\OneRdfUser;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class ManagementService
 {
     public function createUser(array $data): User
     {
+        $syncing = $data["for_syncing"];
+
+        $date_today = Carbon::now("Asia/Manila");
+
+        if ($syncing) {
+            $id_prefix = $data["personal_info"]["id_prefix"];
+            $id_no = $data["personal_info"]["id_no"];
+
+            $one_user = OneRdfUser::where("id_prefix", $id_prefix)
+                ->where("id_no", $id_no)
+                ->first();
+
+            $one_user->update([
+                "synced_at" => $date_today,
+            ]);
+
+            $password = Hash::make($one_user->password);
+        } else {
+            $password = Hash::make($data["username"]);
+        }
+
         $oneCharging = OneCharging::findOrFail(
             $data["personal_info"]["one_charging_id"]
         );
@@ -27,7 +51,7 @@ class ManagementService
             "one_charging_code" => $oneCharging->code,
             "one_charging_name" => $oneCharging->name,
             "username" => $data["username"],
-            "password" => bcrypt($data["username"]),
+            "password" => $password,
             "role_id" => $data["role_id"],
         ]);
     }
@@ -71,7 +95,7 @@ class ManagementService
             return null;
         }
 
-        if ($user->id == auth()->id() || $user->role_id == 1) {
+        if ($user->id == auth()->id || $user->role_id == 1) {
             return [
                 "message" => __("messages.cannot_archive_own_account"),
                 "user" => [],
