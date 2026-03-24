@@ -1,8 +1,11 @@
 /.phpunit.cache
 /node_modules
+/app/Http/Middleware/Authenticate.php
+/config/database.php
 /public/build
 /public/hot
 /public/storage
+/public/index.php
 /storage/*.key
 /vendor
 .env

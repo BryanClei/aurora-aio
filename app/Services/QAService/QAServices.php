@@ -504,7 +504,7 @@ class QAServices
                     DIRECTORY_SEPARATOR .
                     "checklist_attachments"
             )
-            : base_path("public_html/pretestomega/aurora/attachment");
+            : base_path("public_html/rdfwebone/aurora-aio/store/attachment");
 
         if (empty($filenames)) {
             return response()->json(
