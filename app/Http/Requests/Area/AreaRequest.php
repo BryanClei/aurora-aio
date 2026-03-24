@@ -25,6 +25,7 @@ class AreaRequest extends FormRequest
         return [
             "name" => [
                 "required",
+                "string",
                 $this->route()->area
                     ? "unique:areas,name," . $this->route()->area
                     : "unique:areas,name",

@@ -24,6 +24,7 @@ class ChecklistRequest extends FormRequest
         return [
             "name" => [
                 "required",
+                "string",
                 $this->route()->checklist
                     ? "unique:checklists,name," . $this->route()->checklist
                     : "unique:checklists,name",
@@ -43,9 +44,9 @@ class ChecklistRequest extends FormRequest
                 "array",
             ],
             "sections.*.questions.*.options.*.option_text" =>
-                "required_with:sections.*.questions.*.options|string",
+            "required_with:sections.*.questions.*.options|string",
             "sections.*.questions.*.options.*.order_index" =>
-                "required_with:sections.*.questions.*.options|integer",
+            "required_with:sections.*.questions.*.options|integer",
         ];
     }
 

@@ -240,32 +240,46 @@ class QAServices
                 try {
                     $file = $response["attachment"];
 
+                    // ✅ Unique filename
                     $filename = sprintf(
-                        "%s_Q%s_%s.%s",
+                        "%s_Q%s_%s_%s.%s",
                         $code,
                         $response["question_id"],
                         $week . $month . $year,
+                        time(),
                         $file->getClientOriginalExtension()
                     );
 
-                    // 🔹 OPTION 1: LOCAL (uses Laravel Storage)
-                    // Uncomment when working locally:
-                    $attachmentPath = $file->storeAs(
-                        "checklist_attachments",
-                        $filename,
-                        "public"
-                    );
+                    // ✅ Detect environment
+                    if (app()->environment("local")) {
+                        // 🔹 LOCAL (Laravel Storage)
+                        $attachmentPath = $file->storeAs(
+                            "checklist_attachments",
+                            $filename,
+                            "public"
+                        );
 
-                    // 🔹 OPTION 2: PRODUCTION (direct upload to cPanel public_html)
-                    // Uncomment when deployed to cPanel:
-                    // $file->move(public_path("attachment"), $filename);
-                    // $attachmentPath = "attachment/" . $filename;
+                        $fileUrl = asset("storage/" . $attachmentPath);
+                    } else {
+                        // 🔹 PRODUCTION (cPanel direct upload)
+                        $destinationPath = public_path("/aurora-aio/store/attachment");
 
-                    // Replace UploadedFile with structured file info
+                        // Ensure directory exists
+                        if (!file_exists($destinationPath)) {
+                            mkdir($destinationPath, 0755, true);
+                        }
+
+                        $file->move($destinationPath, $filename);
+
+                        $attachmentPath = "attachment/" . $filename;
+                        $fileUrl = asset("aurora-aio/store/" . $attachmentPath);
+                    }
+
+                    // ✅ Replace UploadedFile with structured file info
                     $response["attachment"] = [
                         "file_name" => $filename,
                         "file_path" => $attachmentPath,
-                        "file_url" => asset("storage/" . $attachmentPath),
+                        "file_url" => $fileUrl,
                         "original_name" => $file->getClientOriginalName(),
                         "mime_type" => $file->getMimeType(),
                         "size" => $file->getSize(),
@@ -285,6 +299,69 @@ class QAServices
 
         return $processedResponses;
     }
+
+    // private static function processResponseAttachments(
+    //     array $responses,
+    //     string $code,
+    //     int $week,
+    //     int $month,
+    //     int $year
+    // ): array {
+    //     $processedResponses = [];
+
+    //     foreach ($responses as $response) {
+    //         if (
+    //             isset($response["attachment"]) &&
+    //             $response["attachment"] instanceof UploadedFile
+    //         ) {
+    //             try {
+    //                 $file = $response["attachment"];
+
+    //                 $filename = sprintf(
+    //                     "%s_Q%s_%s.%s",
+    //                     $code,
+    //                     $response["question_id"],
+    //                     $week . $month . $year,
+    //                     $file->getClientOriginalExtension()
+    //                 );
+
+    //                 // 🔹 OPTION 1: LOCAL (uses Laravel Storage)
+    //                 // Uncomment when working locally:
+    //                 $attachmentPath = $file->storeAs(
+    //                     "checklist_attachments",
+    //                     $filename,
+    //                     "public"
+    //                 );
+
+    //                 // 🔹 OPTION 2: PRODUCTION (direct upload to cPanel public_html)
+    //                 // Uncomment when deployed to cPanel:
+    //                 // $file->move(public_path("/aurora-aio/store/attachment"), $filename);
+    //                 // $attachmentPath = "attachment/" . $filename;
+
+    //                 // Replace UploadedFile with structured file info
+    //                 $response["attachment"] = [
+    //                     "file_name" => $filename,
+    //                     "file_path" => $attachmentPath,
+    //                     "file_url" => asset("storage/" . $attachmentPath),
+    //                     "original_name" => $file->getClientOriginalName(),
+    //                     "mime_type" => $file->getMimeType(),
+    //                     "size" => $file->getSize(),
+    //                 ];
+    //             } catch (\Exception $e) {
+    //                 $response["attachment"] = null;
+    //             }
+    //         } elseif (
+    //             isset($response["attachment"]) &&
+    //             empty($response["attachment"])
+    //         ) {
+    //             $response["attachment"] = null;
+    //         }
+
+    //         $processedResponses[] = $response;
+    //     }
+
+    //     return $processedResponses;
+    // }
 
     private static function shouldAutoCreateNextWeek(
         int $storeChecklistId,
