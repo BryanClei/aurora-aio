@@ -263,7 +263,7 @@ class QAServices
                         // 🔹 PRODUCTION (REAL cPanel path)
                         $basePath = rtrim(env('ATTACHMENT_ROOT'), '/');
 
-                        $destinationPath = $basePath . "/attachment";
+                        $destinationPath = $basePath . "/attachment/checklist_attachments";
 
                         // Ensure directory exists
                         if (!file_exists($destinationPath)) {
@@ -272,7 +272,7 @@ class QAServices
 
                         $file->move($destinationPath, $filename);
 
-                        $attachmentPath = "attachment/" . $filename;
+                        $attachmentPath = "/attachment/checklist_attachments/" . $filename;
 
                         $fileUrl = asset("aurora-aio/store/" . $attachmentPath);
                     }
@@ -499,7 +499,7 @@ class QAServices
 
         $basePath = $isLocal
             ? storage_path("app/public/checklist_attachments")
-            : rtrim(env('ATTACHMENT_ROOT'), '/') . "/attachment";
+            : rtrim(env('ATTACHMENT_ROOT'), '/') . "/attachment/checklist_attachments";
 
         if (empty($filenames)) {
             return response()->json([
@@ -574,7 +574,7 @@ class QAServices
             if (file_exists($filePath)) {
                 $url = $isLocal
                     ? asset("storage/checklist_attachments/" . $file)
-                    : asset("aurora-aio/store/attachment/" . $file);
+                    : asset("aurora-aio/store/attachment/checklist_attachments" . $file);
 
                 $urls[] = $url;
             } else {
@@ -606,7 +606,7 @@ class QAServices
             return response()->file(Storage::disk("public")->path($path));
         } else {
             $basePath = env('ATTACHMENT_ROOT');
-            $filePath = $basePath . "/attachment/" . $filename;
+            $filePath = $basePath . "/attachment/checklist_attachments/" . $filename;
 
             if (!file_exists($filePath)) {
                 return response()->json([
