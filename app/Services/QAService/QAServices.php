@@ -609,25 +609,31 @@ class QAServices
     {
         $filename = basename($filename);
 
-        if (
-            !Storage::disk("public")->exists(
-                "checklist_attachments/" . $filename
-            )
-        ) {
-            return response()->json(
-                [
+        if (app()->environment('local')) {
+            // 🔹 LOCAL
+            $path = "checklist_attachments/" . $filename;
+
+            if (!Storage::disk("public")->exists($path)) {
+                return response()->json([
                     "success" => false,
                     "message" => "File not found",
-                ],
-                404
-            );
+                ], 404);
+            }
+
+            return response()->file(Storage::disk("public")->path($path));
+        } else {
+            // 🔹 PRODUCTION
+            $filePath = public_path("aurora-aio/store/attachment/" . $filename);
+
+            if (!file_exists($filePath)) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "File not found",
+                ], 404);
+            }
+
+            return response()->file($filePath);
         }
-
-        $filePath = Storage::disk("public")->path(
-            "checklist_attachments/" . $filename
-        );
-
-        return response()->file($filePath);
     }
 
     public static function autoSkip(array $data)
@@ -962,16 +968,29 @@ class QAServices
         $weekly_record = StoreChecklistWeeklyRecord::find($id);
 
         if (!$weekly_record) {
-            return null;
+            abort(404, "Record not found");
         }
 
-        if (
-            !$weekly_record->attachment_path ||
-            !Storage::disk("public")->exists($weekly_record->attachment_path)
-        ) {
+        if (!$weekly_record->attachment_path) {
             abort(404, "Attachment not found");
         }
 
-        return Storage::disk("public")->response($weekly_record->attachment_path);
+        if (app()->environment('local')) {
+            // 🔹 LOCAL
+            if (!Storage::disk("public")->exists($weekly_record->attachment_path)) {
+                abort(404, "Attachment not found");
+            }
+
+            return Storage::disk("public")->response($weekly_record->attachment_path);
+        } else {
+            // 🔹 PRODUCTION
+            $filePath = public_path("aurora-aio/store/" . $weekly_record->attachment_path);
+
+            if (!file_exists($filePath)) {
+                abort(404, "Attachment not found");
+            }
+
+            return response()->file($filePath);
+        }
     }
 }
