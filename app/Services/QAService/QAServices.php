@@ -930,13 +930,28 @@ class QAServices
             $extension = $signature->getClientOriginalExtension();
             $filename = Str::random(16) . ".{$extension}";
 
-            $path = $signature->storeAs(
-                "store_checklist_weekly_record/signatures/{$weeklyId}",
-                $filename,
-                "public"
-            );
+            if (app()->environment('local')) {
+                // 🔹 LOCAL (Laravel storage)
+                $path = $signature->storeAs(
+                    "store_checklist_weekly_record/signatures/{$weeklyId}",
+                    $filename,
+                    "public"
+                );
 
-            return $path;
+                return $path;
+            } else {
+                $destinationPath = public_path(
+                    "/aurora-aio/store/attachment/store_checklist_weekly_record/signatures/{$weeklyId}"
+                );
+
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+
+                $signature->move($destinationPath, $filename);
+
+                return "attachment/store_checklist_weekly_record/signatures/{$weeklyId}/" . $filename;
+            }
         } catch (\Exception $e) {
             return null;
         }
