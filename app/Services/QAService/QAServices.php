@@ -494,47 +494,36 @@ class QAServices
 
     public static function downloadAttachment($filenames = [], $zip = false)
     {
-        $isLocal = config("app.env") === "local";
+        $isLocal = app()->environment('local');
 
         $basePath = $isLocal
-            ? storage_path(
-                "app" .
-                    DIRECTORY_SEPARATOR .
-                    "public" .
-                    DIRECTORY_SEPARATOR .
-                    "checklist_attachments"
-            )
-            : base_path("public_html/rdfwebone/aurora-aio/store/attachment");
+            ? storage_path("app/public/checklist_attachments")
+            : rtrim(env('ATTACHMENT_ROOT'), '/') . "/attachment";
 
         if (empty($filenames)) {
-            return response()->json(
-                [
-                    "message" => "No filenames provided.",
-                ],
-                400
-            );
+            return response()->json([
+                "message" => "No filenames provided.",
+            ], 400);
         }
 
-        // 🟩 SINGLE FILE — Always direct download
+        // 🟩 SINGLE FILE
         if (count($filenames) === 1) {
             $filePath = $basePath . DIRECTORY_SEPARATOR . $filenames[0];
 
             if (!file_exists($filePath)) {
-                return response()->json(
-                    [
-                        "message" => "File not found.",
-                        "file" => $filePath,
-                    ],
-                    404
-                );
+                return response()->json([
+                    "message" => "File not found.",
+                    "file" => $filePath,
+                ], 404);
             }
 
             return response()->download($filePath);
         }
 
-        // 🟩 MULTIPLE FILES — ZIP if requested
+        // 🟩 MULTIPLE FILES (ZIP)
         if ($zip === true) {
-            $tempDir = storage_path("app" . DIRECTORY_SEPARATOR . "temp");
+            $tempDir = storage_path("app/temp");
+
             if (!file_exists($tempDir)) {
                 mkdir($tempDir, 0755, true);
             }
@@ -543,11 +532,13 @@ class QAServices
             $zipPath = $tempDir . DIRECTORY_SEPARATOR . $zipName;
 
             $zipper = new ZipArchive();
+
             if ($zipper->open($zipPath, ZipArchive::CREATE) === true) {
                 $added = false;
 
                 foreach ($filenames as $file) {
                     $filePath = $basePath . DIRECTORY_SEPARATOR . $file;
+
                     if (file_exists($filePath)) {
                         $zipper->addFile($filePath, basename($filePath));
                         $added = true;
@@ -557,14 +548,9 @@ class QAServices
                 $zipper->close();
 
                 if (!$added) {
-                    return response()->json(
-                        [
-                            "message" =>
-                            "No valid files found to include in ZIP.",
-                            "base_path" => $basePath,
-                        ],
-                        404
-                    );
+                    return response()->json([
+                        "message" => "No valid files found.",
+                    ], 404);
                 }
 
                 return response()
@@ -572,36 +558,33 @@ class QAServices
                     ->deleteFileAfterSend(true);
             }
 
-            return response()->json(
-                [
-                    "message" => "Failed to create ZIP file.",
-                ],
-                500
-            );
+            return response()->json([
+                "message" => "Failed to create ZIP file.",
+            ], 500);
         }
 
-        // 🟨 MULTIPLE FILES, zip = false — return download URLs instead
+        // 🟨 MULTIPLE FILES (NO ZIP)
         $urls = [];
         $notFound = [];
+
         foreach ($filenames as $file) {
             $filePath = $basePath . DIRECTORY_SEPARATOR . $file;
+
             if (file_exists($filePath)) {
                 $url = $isLocal
                     ? asset("storage/checklist_attachments/" . $file)
-                    : url("pretestomega/aurora/attachment/" . $file);
+                    : asset("aurora-aio/store/attachment/" . $file);
 
                 $urls[] = $url;
             } else {
-                $notFound[] = $filePath;
+                $notFound[] = $file;
             }
         }
 
         return response()->json([
-            "message" => "Multiple files available for download.",
+            "message" => "Multiple files available.",
             "download_urls" => $urls,
             "not_found" => $notFound,
-            "zip_used" => $zip,
-            "base_path" => $basePath,
         ]);
     }
 
@@ -610,7 +593,6 @@ class QAServices
         $filename = basename($filename);
 
         if (app()->environment('local')) {
-            // 🔹 LOCAL
             $path = "checklist_attachments/" . $filename;
 
             if (!Storage::disk("public")->exists($path)) {
@@ -622,8 +604,8 @@ class QAServices
 
             return response()->file(Storage::disk("public")->path($path));
         } else {
-            // 🔹 PRODUCTION
-            $filePath = public_path("aurora-aio/store/attachment/" . $filename);
+            $basePath = env('ATTACHMENT_ROOT');
+            $filePath = $basePath . "/attachment/" . $filename;
 
             if (!file_exists($filePath)) {
                 return response()->json([
@@ -937,18 +919,16 @@ class QAServices
             $filename = Str::random(16) . ".{$extension}";
 
             if (app()->environment('local')) {
-                // 🔹 LOCAL (Laravel storage)
-                $path = $signature->storeAs(
+                return $signature->storeAs(
                     "store_checklist_weekly_record/signatures/{$weeklyId}",
                     $filename,
                     "public"
                 );
-
-                return $path;
             } else {
-                $destinationPath = public_path(
-                    "/aurora-aio/store/attachment/store_checklist_weekly_record/signatures/{$weeklyId}"
-                );
+                $basePath = rtrim(env('ATTACHMENT_ROOT'), '/');
+
+                $destinationPath = $basePath .
+                    "/attachment/store_checklist_weekly_record/signatures/{$weeklyId}";
 
                 if (!file_exists($destinationPath)) {
                     mkdir($destinationPath, 0755, true);
@@ -976,15 +956,14 @@ class QAServices
         }
 
         if (app()->environment('local')) {
-            // 🔹 LOCAL
             if (!Storage::disk("public")->exists($weekly_record->attachment_path)) {
                 abort(404, "Attachment not found");
             }
 
             return Storage::disk("public")->response($weekly_record->attachment_path);
         } else {
-            // 🔹 PRODUCTION
-            $filePath = public_path("aurora-aio/store/" . $weekly_record->attachment_path);
+            $basePath = env('ATTACHMENT_ROOT');
+            $filePath = $basePath . "/" . $weekly_record->attachment_path;
 
             if (!file_exists($filePath)) {
                 abort(404, "Attachment not found");
