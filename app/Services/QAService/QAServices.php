@@ -250,9 +250,8 @@ class QAServices
                         $file->getClientOriginalExtension()
                     );
 
-                    // ✅ Detect environment
                     if (app()->environment("local")) {
-                        // 🔹 LOCAL (Laravel Storage)
+                        // 🔹 LOCAL
                         $attachmentPath = $file->storeAs(
                             "checklist_attachments",
                             $filename,
@@ -261,8 +260,10 @@ class QAServices
 
                         $fileUrl = asset("storage/" . $attachmentPath);
                     } else {
-                        // 🔹 PRODUCTION (cPanel direct upload)
-                        $destinationPath = public_path("/aurora-aio/store/attachment");
+                        // 🔹 PRODUCTION (REAL cPanel path)
+                        $basePath = rtrim(env('ATTACHMENT_ROOT'), '/');
+
+                        $destinationPath = $basePath . "/attachment";
 
                         // Ensure directory exists
                         if (!file_exists($destinationPath)) {
@@ -272,10 +273,10 @@ class QAServices
                         $file->move($destinationPath, $filename);
 
                         $attachmentPath = "attachment/" . $filename;
+
                         $fileUrl = asset("aurora-aio/store/" . $attachmentPath);
                     }
 
-                    // ✅ Replace UploadedFile with structured file info
                     $response["attachment"] = [
                         "file_name" => $filename,
                         "file_path" => $attachmentPath,
