@@ -14,10 +14,12 @@ use App\Models\StoreChecklistResponse;
 use App\Models\StoreChecklistWeeklyRecord;
 use App\Models\User;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Log;
 use ZipArchive;
 
 class QAServices
@@ -260,32 +262,33 @@ class QAServices
 
                         $fileUrl = asset("storage/" . $attachmentPath);
                     } else {
-                        // 🔹 PRODUCTION (REAL cPanel path)
                         $basePath = rtrim(env('ATTACHMENT_ROOT'), '/');
-
                         $destinationPath = $basePath . "/attachment/checklist_attachments";
 
-                        // Ensure directory exists
                         if (!file_exists($destinationPath)) {
                             mkdir($destinationPath, 0755, true);
                         }
 
+                        $originalName = $file->getClientOriginalName();
+                        $mimeType     = $file->getMimeType();
+                        $fileSize     = $file->getSize();
+
                         $file->move($destinationPath, $filename);
 
                         $attachmentPath = "/attachment/checklist_attachments/" . $filename;
-
                         $fileUrl = asset("aurora-aio/store/" . $attachmentPath);
                     }
 
                     $response["attachment"] = [
-                        "file_name" => $filename,
-                        "file_path" => $attachmentPath,
-                        "file_url" => $fileUrl,
-                        "original_name" => $file->getClientOriginalName(),
-                        "mime_type" => $file->getMimeType(),
-                        "size" => $file->getSize(),
+                        "file_name"     => $filename,
+                        "file_path"     => $attachmentPath,
+                        "file_url"      => $fileUrl,
+                        "original_name" => $originalName,
+                        "mime_type"     => $mimeType,
+                        "size"          => $fileSize,
                     ];
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
+                    Log::error('Attachment upload failed: ' . $e->getMessage());
                     $response["attachment"] = null;
                 }
             } elseif (
