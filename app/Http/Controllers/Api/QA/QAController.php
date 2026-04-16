@@ -2,20 +2,18 @@
 
 namespace App\Http\Controllers\Api\QA;
 
-use App\Models\Area;
-use App\Models\Store;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ReasonRequest;
-use Essa\APIToolKit\Api\ApiResponse;
 use App\Http\Requests\QA\StoreRequest;
-use App\Services\QAService\QAServices;
+use App\Http\Requests\QA\UpdateRequest;
 use App\Http\Requests\QADisplayRequest;
-use App\Http\Resources\Area\QAAreaResource;
+use App\Http\Requests\ReasonRequest;
 use App\Http\Resources\Store\QAStoreResource;
-use App\Http\Resources\Weekly\WeeklyQAResource;
 use App\Http\Resources\Weekly\WeeklyQAStoreResource;
-use App\Models\StoreChecklistWeeklyRecord;
+use App\Models\Store;
+use App\Services\QAService\QAServices;
+use Essa\APIToolKit\Api\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class QAController extends Controller
 {
@@ -30,25 +28,47 @@ class QAController extends Controller
 
     public function index(QADisplayRequest $request)
     {
-        $user_id = Auth()->user()->id;
+        $user_id = Auth::user()->id;
         $pagination = $request->pagination;
         $month = $request->month;
         $year = $request->year;
 
+        // $store = Store::with([
+        //     "store_checklist.weekly_record" => function ($q) use (
+        //         $month,
+        //         $year
+        //     ) {
+        //         $q->when($month, fn($query) => $query->where("month", $month))
+        //             ->when($year, fn($query) => $query->where("year", $year))
+        //             ->orderBy("week", "asc");
+        //     },
+        //     "store_checklist.weekly_record.weekly_skipped",
+        // ])
+        //     ->whereHas("store_checklist", function ($query) {
+        //         $query->whereHas("checklist.sections");
+        //     })
+        //     ->useFilters()
+        //     ->dynamicPaginate();
+
         $store = Store::with([
-            "store_checklist.weekly_record" => function ($q) use (
-                $month,
-                $year
-            ) {
+            "store_checklist" => function ($q) use ($month, $year) {
+                $q->withExists([
+                    'previous_overdue as has_previous_overdue' => function ($query) use ($month, $year) {
+                        $query->where('status', 'Overdue')
+                            ->where(function ($q2) use ($month, $year) {
+                                $q2->where('year', '<', $year)
+                                    ->orWhere(fn($q3) => $q3->where('year', $year)->where('month', '<', $month));
+                            });
+                    }
+                ]);
+            },
+            "store_checklist.weekly_record" => function ($q) use ($month, $year) {
                 $q->when($month, fn($query) => $query->where("month", $month))
                     ->when($year, fn($query) => $query->where("year", $year))
                     ->orderBy("week", "asc");
             },
             "store_checklist.weekly_record.weekly_skipped",
         ])
-            ->whereHas("store_checklist", function ($query) {
-                $query->whereHas("checklist.sections");
-            })
             ->useFilters()
             ->dynamicPaginate();
 
@@ -70,7 +90,7 @@ class QAController extends Controller
 
     public function show(Request $request, $id)
     {
-        $user_id = Auth()->user()->id;
+        $user_id = Auth::user()->id;
         $month = $request->month;
         $year = $request->year;
         $week = $request->week;
@@ -113,7 +133,7 @@ class QAController extends Controller
     {
         $request->all();
 
-        $user_id = Auth()->user()->id;
+        $user_id = Auth::user()->id;
 
         $answer = $this->qaServices->storeResponse($request->all());
 
@@ -129,7 +149,7 @@ class QAController extends Controller
 
     public function update(StoreRequest $request, $id)
     {
-        $user_id = Auth()->user()->id;
+        $user_id = Auth::user()->id;
 
         $answer = $this->qaServices->updateResponse($id, $request->all());
 
@@ -166,7 +186,7 @@ class QAController extends Controller
 
     public function weeklySkipped(Request $request)
     {
-        $user_id = Auth()->user()->id;
+        $user_id = Auth::user()->id;
 
         $answer = $this->qaServices->autoSkip($request->all());
 
@@ -182,7 +202,7 @@ class QAController extends Controller
 
     public function forApproval(ReasonRequest $request, $id)
     {
-        $user_id = Auth()->user()->id;
+        $user_id = Auth::user()->id;
 
         $answer = $this->qaServices->forApproval($id, $request->all());
 

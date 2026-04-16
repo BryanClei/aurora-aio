@@ -21,9 +21,10 @@ class QAStoreChecklistResource extends JsonResource
             "code" => $this->code,
             "checklist" => new QAChecklistResource($this->checklist) ?? null,
             "sections" =>
-                QASectionResource::collection($this->checklist->sections) ??
+            QASectionResource::collection($this->checklist->sections) ??
                 null,
             "weekly_record" => $this->weekly_record,
+            "has_previous_overdue" => (bool) $this->has_previous_overdue, //
             "created_at" => $this->created_at,
             "updated_at" => $this->updated_at,
             "deleted_at" => $this->deleted_at,

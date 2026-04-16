@@ -47,6 +47,16 @@ class StoreChecklist extends Model
         );
     }
 
+    // Add this:
+    public function previous_overdue()
+    {
+        return $this->hasMany(
+            StoreChecklistWeeklyRecord::class,
+            "store_checklist_id",
+            "id"
+        )->where("status", "Overdue");
+    }
+
     protected static function booted()
     {
         static::creating(function ($store_checklist) {
