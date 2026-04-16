@@ -862,7 +862,7 @@ class QAServices
             return __("messages.id_not_found");
         }
 
-        if ($weekly_record->status !== "Overdue") {
+        if ($weekly_record->status !== "Overdue" && $weekly_record->status !== "Rejected") {
             return __("messages.overdue_only");
         }
 

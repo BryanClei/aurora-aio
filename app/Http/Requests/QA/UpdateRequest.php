@@ -2,28 +2,17 @@
 
 namespace App\Http\Requests\QA;
 
-use Carbon\Carbon;
-use App\Models\StoreChecklist;
-use App\Rules\WeeklyLimitRule;
-use Illuminate\Validation\Rule;
 use App\Helpers\FourWeekCalendarHelper;
+use App\Models\StoreChecklist;
 use App\Models\StoreChecklistWeeklyRecord;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StoreRequest extends FormRequest
+class UpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -32,11 +21,10 @@ class StoreRequest extends FormRequest
         return [
             "store_id"             => ["required", "exists:stores,id"],
             "checklist_id"         => ["required", "integer", "exists:checklists,id"],
-            "store_checklist_id"   => array_values(array_filter([
+            "store_checklist_id"   => [
                 "required",
                 "exists:store_checklists,id",
-                !$isUpdate ? new WeeklyLimitRule() : null,
-            ])),
+            ],
             "code"                 => ["required", "string", "exists:store_checklists,code"],
             "responses"            => ["required", "array", "min:1"],
             "responses.*.section_id"     => ["required", "integer", "exists:checklist_sections,id"],
@@ -107,23 +95,23 @@ class StoreRequest extends FormRequest
                     );
             }
 
-            $today = Carbon::today();
-            $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek(
-                $today
-            );
+            // $today = Carbon::today();
+            // $fourWeekInfo = FourWeekCalendarHelper::getMonthBasedFourWeek(
+            //     $today
+            // );
 
-            $week = $fourWeekInfo["week"];
-            $month = $fourWeekInfo["month"];
-            $year = $fourWeekInfo["year"];
+            // $week = $fourWeekInfo["week"];
+            // $month = $fourWeekInfo["month"];
+            // $year = $fourWeekInfo["year"];
 
-            $alreadyAnswered = StoreChecklistWeeklyRecord::where(
-                "store_checklist_id",
-                $this->store_checklist_id
-            )
-                ->where("week", $week)
-                ->where("month", $month)
-                ->where("year", $year)
-                ->exists();
+            // $alreadyAnswered = StoreChecklistWeeklyRecord::where(
+            //     "store_checklist_id",
+            //     $this->store_checklist_id
+            // )
+            //     ->where("week", $week)
+            //     ->where("month", $month)
+            //     ->where("year", $year)
+            //     ->exists();
 
             // if ($alreadyAnswered) {
             //     $validator
