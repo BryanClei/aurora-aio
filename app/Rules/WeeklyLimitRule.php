@@ -40,17 +40,27 @@ class WeeklyLimitRule implements Rule
         $year = $fourWeekInfo["year"];
 
         // Check if a record already exists for this week, month, and year
-        $exists = StoreChecklistWeeklyRecord::where(
+        $record = StoreChecklistWeeklyRecord::where(
             "store_checklist_id",
             $storeChecklistId
         )
             ->where("week", $week)
             ->where("month", $month)
             ->where("year", $year)
-            ->exists();
+            ->first();
+
+        // ✅ No record yet → allow
+        if (!$record) {
+            return true;
+        }
+
+        // ✅ If already approved → allow (based on your logic)
+        if ($record->status == "Approved") {
+            return true;
+        }
 
         // Return TRUE if not existing (allowed), FALSE if already exists
-        return !$exists;
+        return !$record;
     }
 
     /**
