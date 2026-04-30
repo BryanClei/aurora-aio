@@ -279,6 +279,11 @@ class QAServices
                         $fileUrl = asset("aurora-aio/store/" . $attachmentPath);
                     }
 
+                    // ✅ Capture metadata BEFORE move() in both cases — move these ABOVE the if/else
+                    $originalName = $file->getClientOriginalName();
+                    $mimeType     = $file->getMimeType();
+                    $fileSize     = $file->getSize();
+
                     $response["attachment"] = [
                         "file_name"     => $filename,
                         "file_path"     => $attachmentPath,

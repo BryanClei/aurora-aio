@@ -173,6 +173,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
         ApproverDashboardController::class,
         "rejected",
     ]);
+    Route::get("approver_dashboard/badge_count", [
+        ApproverDashboardController::class,
+        "badgeCount",
+    ]);
     Route::apiResource(
         "approver_dashboard",
         ApproverDashboardController::class
