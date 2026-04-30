@@ -35,7 +35,7 @@ class StoreRequest extends FormRequest
             "store_checklist_id"   => array_values(array_filter([
                 "required",
                 "exists:store_checklists,id",
-                !$isUpdate ? new WeeklyLimitRule() : null,
+                // !$isUpdate ? new WeeklyLimitRule() : null,
             ])),
             "code"                 => ["required", "string", "exists:store_checklists,code"],
             "responses"            => ["required", "array", "min:1"],

@@ -69,6 +69,9 @@ class QAController extends Controller
             },
             "store_checklist.weekly_record.weekly_skipped",
         ])
+            ->whereHas("store_checklist", function ($query) {
+                $query->whereHas("checklist.sections");
+            })
             ->useFilters()
             ->dynamicPaginate();
 

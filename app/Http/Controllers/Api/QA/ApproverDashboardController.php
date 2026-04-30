@@ -30,27 +30,6 @@ class ApproverDashboardController extends Controller
         $month = $request->month;
         $year = $request->year;
 
-        // $store = Store::with([
-        //     "store_checklist.weekly_record" => function ($q) use (
-        //         $month,
-        //         $year
-        //     ) {
-        //         $q->when($month, fn($query) => $query->where("month", $month))
-        //             ->when($year, fn($query) => $query->where("year", $year))
-        //             ->orderBy("week", "asc");
-        //     },
-        //     "store_checklist.weekly_record.weekly_skipped",
-        // ])
-        //     ->whereHas("store_checklist", function ($query) {
-        //         $query->whereHas("checklist.sections");
-        //     })
-        //     ->whereHas("store_checklist.weekly_record", function ($query) {
-        //         $query->where("status", "For Approval");
-        //     })
-        //     ->whereHas("store_checklist.weekly_record.weekly_skipped")
-        //     ->useFilters()
-        //     ->dynamicPaginate();
-
         $store = Store::with([
             "store_checklist" => function ($query) {
                 $query->whereHas("checklist.sections")
@@ -88,6 +67,25 @@ class ApproverDashboardController extends Controller
         return $this->responseSuccess(
             "Store checklist display successfully.",
             $store
+        );
+    }
+
+    public function badgeCount()
+    {
+        $count = Store::whereHas("store_checklist", function ($query) {
+            $query->whereHas("checklist.sections")
+                ->whereHas("weekly_record", function ($q) {
+                    $q->where("status", "For Approval");
+                });
+        })
+            ->whereHas("store_checklist.weekly_record.weekly_skipped")
+            ->count();
+
+        return $this->responseSuccess(
+            "Badge count fetched successfully.",
+            [
+                "badge_count" => $count
+            ]
         );
     }
 
