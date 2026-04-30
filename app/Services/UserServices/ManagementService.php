@@ -84,6 +84,8 @@ class ManagementService
             $user->save();
         }
 
+        $user->fresh();
+
         return $user;
     }
 
