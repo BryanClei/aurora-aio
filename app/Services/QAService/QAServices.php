@@ -252,6 +252,11 @@ class QAServices
                         $file->getClientOriginalExtension()
                     );
 
+                    // ✅ Capture metadata BEFORE move() in both cases — move these ABOVE the if/else
+                    $originalName = $file->getClientOriginalName();
+                    $mimeType     = $file->getMimeType();
+                    $fileSize     = $file->getSize();
+
                     if (app()->environment("local")) {
                         // 🔹 LOCAL
                         $attachmentPath = $file->storeAs(
@@ -276,13 +281,9 @@ class QAServices
                         $file->move($destinationPath, $filename);
 
                         $attachmentPath = "/attachment/checklist_attachments/" . $filename;
-                        $fileUrl = asset("aurora-aio.rdfmis.com/store/" . $attachmentPath);
+                        $fileUrl = "https://aurora-store.rdfmis.com/store" . $attachmentPath;
+                        // $fileUrl = asset("aurora-aio.rdfmis.com/store/" . $attachmentPath);
                     }
-
-                    // ✅ Capture metadata BEFORE move() in both cases — move these ABOVE the if/else
-                    $originalName = $file->getClientOriginalName();
-                    $mimeType     = $file->getMimeType();
-                    $fileSize     = $file->getSize();
 
                     $response["attachment"] = [
                         "file_name"     => $filename,
@@ -344,7 +345,7 @@ class QAServices
 
     //                 // 🔹 OPTION 2: PRODUCTION (direct upload to cPanel public_html)
     //                 // Uncomment when deployed to cPanel:
-    //                 // $file->move(public_path("/aurora-aio/store/attachment"), $filename);
+    //                 // $file->move(public_path("/aurora-aio.rdfmis.com/store/attachment"), $filename);
     //                 // $attachmentPath = "attachment/" . $filename;
 
     //                 // Replace UploadedFile with structured file info
@@ -582,7 +583,8 @@ class QAServices
             if (file_exists($filePath)) {
                 $url = $isLocal
                     ? asset("storage/checklist_attachments/" . $file)
-                    : asset("aurora-aio.rdfmis.com/store/attachment/checklist_attachments" . $file);
+                    : "https://aurora-store.rdfmis.com/store/attachment/checklist_attachments/" . $file;
+                // : asset("aurora-aio.rdfmis.com/store/attachment/checklist_attachments" . $file);
 
                 $urls[] = $url;
             } else {
