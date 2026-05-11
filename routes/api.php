@@ -196,3 +196,65 @@ Route::middleware(["auth:sanctum"])->group(function () {
 
     Route::apiResource("allowable_days", AllowableDaysController::class);
 });
+
+// Auth Debug Route - Remove or protect this in production!
+// Route::get('/debug-header', function (Request $request) {
+//     $debugData = [
+//         // Laravel request
+//         'laravel' => [
+//             'authorization_header' => $request->header('Authorization'),
+//             'bearer_token'         => $request->bearerToken(),
+//             'all_headers'          => $request->headers->all(),
+//         ],
+
+//         // Raw server vars
+//         'server' => [
+//             'HTTP_AUTHORIZATION'          => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+//             'REDIRECT_HTTP_AUTHORIZATION' => $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null,
+//             'HTTP_X_AUTHORIZATION'        => $_SERVER['HTTP_X_AUTHORIZATION'] ?? null,
+//             'HTTP_X_AUTH_TOKEN'           => $_SERVER['HTTP_X_AUTH_TOKEN'] ?? null,
+//             'REQUEST_SCHEME'              => $_SERVER['REQUEST_SCHEME'] ?? null,
+//             'SERVER_PORT'                 => $_SERVER['SERVER_PORT'] ?? null,
+//             'HTTPS'                       => $_SERVER['HTTPS'] ?? null,
+//             'HTTP_X_FORWARDED_FOR'        => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+//             'HTTP_X_FORWARDED_PROTO'      => $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null,
+//         ],
+
+//         // All $_SERVER keys that contain "auth" (case-insensitive)
+//         'server_auth_keys' => array_filter(
+//             $_SERVER,
+//             fn($key) => str_contains(strtolower($key), 'auth'),
+//             ARRAY_FILTER_USE_KEY
+//         ),
+
+//         // All $_SERVER keys that contain "http" (catch any proxy headers)
+//         'server_http_keys' => array_filter(
+//             $_SERVER,
+//             fn($key) => str_contains(strtolower($key), 'http'),
+//             ARRAY_FILTER_USE_KEY
+//         ),
+
+//         // Apache headers (if available)
+//         'apache_headers' => function_exists('apache_request_headers')
+//             ? apache_request_headers()
+//             : 'apache_request_headers() not available',
+
+//         // getallheaders fallback
+//         'getallheaders' => function_exists('getallheaders')
+//             ? getallheaders()
+//             : 'getallheaders() not available',
+//     ];
+
+//     // Log everything
+//     \Illuminate\Support\Facades\Log::debug('=== AUTH DEBUG START ===');
+//     \Illuminate\Support\Facades\Log::debug('Laravel Headers',      $debugData['laravel']);
+//     \Illuminate\Support\Facades\Log::debug('Server Vars',          $debugData['server']);
+//     \Illuminate\Support\Facades\Log::debug('Server AUTH keys',     $debugData['server_auth_keys']);
+//     \Illuminate\Support\Facades\Log::debug('Server HTTP keys',     $debugData['server_http_keys']);
+//     \Illuminate\Support\Facades\Log::debug('Apache Headers',       is_array($debugData['apache_headers'])
+//         ? $debugData['apache_headers']
+//         : ['result' => $debugData['apache_headers']]);
+//     \Illuminate\Support\Facades\Log::debug('=== AUTH DEBUG END ===');
+
+//     return response()->json($debugData, 200, [], JSON_PRETTY_PRINT);
+// });
