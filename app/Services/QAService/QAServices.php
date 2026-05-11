@@ -276,7 +276,7 @@ class QAServices
                         $file->move($destinationPath, $filename);
 
                         $attachmentPath = "/attachment/checklist_attachments/" . $filename;
-                        $fileUrl = asset("aurora-aio/store/" . $attachmentPath);
+                        $fileUrl = asset("aurora-aio.rdfmis.com/store/" . $attachmentPath);
                     }
 
                     // ✅ Capture metadata BEFORE move() in both cases — move these ABOVE the if/else
@@ -582,7 +582,7 @@ class QAServices
             if (file_exists($filePath)) {
                 $url = $isLocal
                     ? asset("storage/checklist_attachments/" . $file)
-                    : asset("aurora-aio/store/attachment/checklist_attachments" . $file);
+                    : asset("aurora-aio.rdfmis.com/store/attachment/checklist_attachments" . $file);
 
                 $urls[] = $url;
             } else {
